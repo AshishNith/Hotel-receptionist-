@@ -1,0 +1,10 @@
+{
+  "name": "Gemini Calling Agent",
+  "description": "A real-time voice calling agent powered by Gemini Live API (gemini-3.1-flash-live-preview) with conversational audio streaming and interactive dashboards.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

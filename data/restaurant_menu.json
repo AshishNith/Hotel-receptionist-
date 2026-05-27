@@ -1,0 +1,44 @@
+[
+  {
+    "id": "sandwich",
+    "name": "Club Sandwich",
+    "price": 180,
+    "category": "Snacks",
+    "description": "Toasted double-decker sandwich with fresh vegetables, cheese, and house mayo."
+  },
+  {
+    "id": "paneer",
+    "name": "Paneer Butter Masala",
+    "price": 280,
+    "category": "Main Course",
+    "description": "Rich and creamy dish of paneer (cottage cheese) in a tomato and cashew gravy."
+  },
+  {
+    "id": "biryani",
+    "name": "Chicken Biryani",
+    "price": 350,
+    "category": "Main Course",
+    "description": "Fragrant long-grain basmati rice cooked with succulent chicken pieces and traditional spices."
+  },
+  {
+    "id": "naan",
+    "name": "Butter Naan",
+    "price": 50,
+    "category": "Breads",
+    "description": "Soft and fluffy Indian flatbread glazed with melted butter."
+  },
+  {
+    "id": "pizza",
+    "name": "Margherita Pizza",
+    "price": 250,
+    "category": "Main Course",
+    "description": "Classic 10-inch pizza topped with fresh tomato sauce, mozzarella cheese, and basil leaves."
+  },
+  {
+    "id": "coffee",
+    "name": "Cold Coffee",
+    "price": 120,
+    "category": "Beverages",
+    "description": "Chilled blended coffee with milk, sugar, and a scoop of vanilla ice cream."
+  }
+]

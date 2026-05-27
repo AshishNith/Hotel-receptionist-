@@ -1,0 +1,23 @@
+[
+  {
+    "type": "deluxe",
+    "name": "Deluxe Room",
+    "price": 3500,
+    "capacity": 2,
+    "description": "Comfortable Deluxe room with a King-sized bed, high-speed Wi-Fi, and city view."
+  },
+  {
+    "type": "executive",
+    "name": "Executive Suite",
+    "price": 6500,
+    "capacity": 2,
+    "description": "Spacious Executive Suite with a separate living area, mini-bar, and balcony."
+  },
+  {
+    "type": "presidential",
+    "name": "Presidential Suite",
+    "price": 12000,
+    "capacity": 4,
+    "description": "Ultra-luxury Presidential Suite with private terrace, hot tub, and panoramic views."
+  }
+]

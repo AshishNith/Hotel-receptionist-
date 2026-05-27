@@ -1,0 +1,2 @@
+BookingID,Name,Phone,Email,RoomType,CheckIn,CheckOut,Guests,TotalPrice,Status,Addons
+BK-8056,Ashish Ranjan,9934225353,23bme025@nith.ac.in,Deluxe Room,2026-05-28,2026-05-29,2,3500,Booked,
