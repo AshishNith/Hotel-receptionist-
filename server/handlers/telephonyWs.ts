@@ -4,6 +4,7 @@ import { getGeminiClient, getCompiledSystemInstruction, allToolDeclarations, GEM
 import { executeToolCalls } from "../services/toolExecutor.js";
 import { CallLogger } from "../services/callLogger.js";
 import { PersonaModel } from "../models/Persona.js";
+import { addCallTranscript, updateCallStatus } from "../services/vobizService.js";
 import {
   decodeMulaw, encodeMulaw,
   base64ToInt16Array, int16ArrayToBase64,
@@ -24,6 +25,8 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
 
   const personaId = upgradeUrl.searchParams.get("personaId") || "diya";
   const callerNumber = decodeURIComponent(upgradeUrl.searchParams.get("callerNumber") || "");
+  const outboundCallId = upgradeUrl.searchParams.get("callId") || "";
+  const direction = (upgradeUrl.searchParams.get("direction") || "inbound") as "inbound" | "outbound";
 
   // Resolve persona
   let persona = await PersonaModel.findOne({ id: personaId });
@@ -34,10 +37,10 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
     return;
   }
 
-  console.log(`[${providerName}] Routing to: ${persona.name} (${persona.role}), From: ${callerNumber}`);
+  console.log(`[${providerName}] Routing to: ${persona.name} (${persona.role}), From: ${callerNumber}, Direction: ${direction}`);
 
   // Initialize call logger
-  const callLogger = new CallLogger(persona.id, persona.name, callerNumber, provider as any, "inbound");
+  const callLogger = new CallLogger(persona.id, persona.name, callerNumber, provider as any, direction);
 
   let geminiSession: any = null;
   let streamSid = "";
@@ -113,10 +116,14 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
 
             // Transcription logging
             if (msg.serverContent?.outputTranscription?.text) {
-              callLogger.addTranscript("agent", msg.serverContent.outputTranscription.text);
+              const text = msg.serverContent.outputTranscription.text;
+              callLogger.addTranscript("agent", text);
+              if (outboundCallId) addCallTranscript(outboundCallId, "agent", text);
             }
             if (msg.serverContent?.inputTranscription?.text) {
-              callLogger.addTranscript("user", msg.serverContent.inputTranscription.text);
+              const text = msg.serverContent.inputTranscription.text;
+              callLogger.addTranscript("user", text);
+              if (outboundCallId) addCallTranscript(outboundCallId, "user", text);
             }
 
             // Forward audio to telephony channel
@@ -269,7 +276,8 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
     if (geminiSession) {
       try { geminiSession.close(); } catch {}
     }
-    callLogger.markCompleted("Caller disconnected");
+    callLogger.markCompleted(direction === "outbound" ? "Outbound call ended" : "Caller disconnected");
+    if (outboundCallId) updateCallStatus(outboundCallId, "completed");
     await callLogger.finalize();
   });
 }

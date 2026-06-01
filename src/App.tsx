@@ -9,13 +9,14 @@ import { CallStats } from "./components/CallStats";
 import { AgentCreator } from "./components/AgentCreator";
 import { KnowledgeBaseManager } from "./components/KnowledgeBaseManager";
 import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
+import { OutboundCaller } from "./components/OutboundCaller";
 import { float32ToInt16, arrayBufferToBase64, base64ToFloat32, startAmbientNoise } from "./utils/audio";
 import { 
   Phone, CheckCircle, Flame, Shield, Server, ArrowUpRight, 
-  Users, Plus, PhoneCall, Database, Sparkles, Trash2, Edit, AlertCircle, Info, Volume2, BarChart3
+  Users, Plus, PhoneCall, Database, Sparkles, Trash2, Edit, AlertCircle, Info, Volume2, BarChart3, PhoneOutgoing
 } from "lucide-react";
 
-type PageID = "dashboard" | "creator" | "call" | "knowledge" | "analytics";
+type PageID = "dashboard" | "creator" | "call" | "knowledge" | "analytics" | "outbound";
 
 function resampleFloat32(input: Float32Array, fromRate: number, toRate: number): Float32Array {
   if (fromRate === toRate) {
@@ -679,6 +680,17 @@ export default function App() {
             <BarChart3 className="w-3.5 h-3.5 text-orange-400" />
             <span>Analytics</span>
           </button>
+          <button
+            onClick={() => setActivePage("outbound")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider transition-all cursor-pointer ${
+              activePage === "outbound"
+                ? "bg-white/10 text-white border border-white/10 shadow-lg"
+                : "text-zinc-400 hover:text-white"
+            }`}
+          >
+            <PhoneOutgoing className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Outbound Call</span>
+          </button>
         </div>
 
         {/* Global telemetry status lines */}
@@ -1319,6 +1331,11 @@ exten => _X.,1,NoOp("Incoming Call routed to Gemini Voice Agent: ${selectedPerso
         {/* 5. ANALYTICS DASHBOARD */}
         {activePage === "analytics" && (
           <AnalyticsDashboard />
+        )}
+
+        {/* 6. OUTBOUND CALLING */}
+        {activePage === "outbound" && (
+          <OutboundCaller />
         )}
 
       </main>

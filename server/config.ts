@@ -28,6 +28,11 @@ export const GOOGLE_REDIRECT_URI =
 // ─── App ────────────────────────────────────────────────────────
 export const APP_URL = process.env.APP_URL || "";
 
+// ─── VoBiz Outbound Calling ─────────────────────────────────────
+export const VOBIZ_AUTH_ID = process.env.VOBIZ_AUTH_ID || "";
+export const VOBIZ_AUTH_TOKEN = process.env.VOBIZ_AUTH_TOKEN || "";
+export const VOBIZ_FROM_NUMBER = process.env.VOBIZ_FROM_NUMBER || "";
+
 // ─── Database Connection ────────────────────────────────────────
 export async function connectDatabase(): Promise<void> {
   mongoose.set("bufferCommands", false);
