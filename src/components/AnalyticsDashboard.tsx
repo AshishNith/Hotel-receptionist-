@@ -4,7 +4,7 @@ import {
   PhoneCall, Clock, TrendingUp, Users, BarChart3,
   ChevronLeft, ChevronRight, X, Phone, PhoneOff,
   Monitor, Radio, Wifi, ArrowDownUp, Trash2, Eye,
-  Calendar, MessageSquare, Wrench,
+  Calendar, MessageSquare, Wrench, Volume2,
 } from "lucide-react";
 
 // ─── Helper ─────────────────────────────────────────────────────
@@ -391,7 +391,7 @@ function CallDetailModal({
         </div>
 
         {/* Meta */}
-        <div className="px-6 py-3 border-b border-white/5 grid grid-cols-4 gap-4 text-xs shrink-0">
+        <div className="px-6 py-3 border-b border-white/5 grid grid-cols-2 sm:grid-cols-5 gap-4 text-xs shrink-0">
           <div>
             <span className="text-zinc-600 block">Duration</span>
             <span className="text-zinc-200 font-mono">{formatDuration(call.durationSeconds)}</span>
@@ -407,6 +407,12 @@ function CallDetailModal({
             </span>
           </div>
           <div>
+            <span className="text-zinc-600 block">Latency / Jitter</span>
+            <span className="text-zinc-200 font-mono text-[10px]">
+              {call.latencyMs != null ? `${call.latencyMs}ms` : "—"} / {call.jitterMs != null ? `${call.jitterMs}ms` : "—"}
+            </span>
+          </div>
+          <div>
             <span className="text-zinc-600 block">Started</span>
             <span className="text-zinc-200 font-mono text-[10px]">
               {formatDate(call.startedAt)} {formatTime(call.startedAt)}
@@ -416,6 +422,20 @@ function CallDetailModal({
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+          {/* Audio Recording */}
+          {call.recordingUrl && (
+            <div className="bg-white/[0.02] border border-white/5 p-4 rounded-xl space-y-2">
+              <h4 className="text-[10px] font-semibold tracking-[0.2em] text-zinc-500 uppercase flex items-center gap-2">
+                <Volume2 className="w-3.5 h-3.5 text-orange-400" /> Call Recording
+              </h4>
+              <audio
+                controls
+                src={call.recordingUrl}
+                className="w-full h-8 outline-none filter invert brightness-90 bg-transparent rounded-lg"
+              />
+            </div>
+          )}
+
           {/* Transcript */}
           <div>
             <h4 className="text-[10px] font-semibold tracking-[0.2em] text-zinc-500 uppercase mb-3 flex items-center gap-2">

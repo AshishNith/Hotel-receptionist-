@@ -96,6 +96,9 @@ async function initializeServer() {
     console.error("[DB] Connection failed:", dbErr);
   }
 
+  // Serve call recordings folder statically
+  app.use("/recordings", express.static(path.join(process.cwd(), "recordings")));
+
   if (process.env.NODE_ENV !== "production") {
     console.log("[Server] Mounting Vite middleware in development...");
     const vite = await createViteServer({

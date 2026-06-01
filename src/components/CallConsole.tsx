@@ -11,6 +11,7 @@ interface CallConsoleProps {
   errorMessage?: string;
   activeVoiceDetect: boolean; // True if the user is transmitting mic audio
   activeSpeakerDetect: boolean; // True if Gemini is outputting speaker audio
+  latencyMs?: number;
 }
 
 export const CallConsole: React.FC<CallConsoleProps> = ({
@@ -22,6 +23,7 @@ export const CallConsole: React.FC<CallConsoleProps> = ({
   errorMessage,
   activeVoiceDetect,
   activeSpeakerDetect,
+  latencyMs,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationRef = useRef<number | null>(null);
@@ -161,7 +163,7 @@ export const CallConsole: React.FC<CallConsoleProps> = ({
         {callState === "connected" && (
           <div className="flex items-center gap-1.5 text-zinc-400 font-mono text-[9px] bg-[#0a0502]/80 px-2 py-0.5 rounded-md border border-white/5">
             <Wifi className="w-3 h-3 text-orange-400" />
-            <span>LATENCY: ~142ms</span>
+            <span>LATENCY: {latencyMs ? `${latencyMs}ms` : "Measuring..."}</span>
           </div>
         )}
       </div>

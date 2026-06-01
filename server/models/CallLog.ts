@@ -30,6 +30,10 @@ export interface ICallLog {
   audioPacketsReceived: number;
   audioPacketsSent: number;
   errorMessage?: string;
+  recordingUrl?: string;
+  latencyMs?: number;
+  jitterMs?: number;
+  packetLossPercent?: number;
 }
 
 const CallTranscriptSchema = new Schema<ICallTranscript>(
@@ -68,6 +72,10 @@ const CallLogSchema = new Schema<ICallLog>({
   audioPacketsReceived: { type: Number, default: 0 },
   audioPacketsSent:     { type: Number, default: 0 },
   errorMessage:         { type: String },
+  recordingUrl:         { type: String },
+  latencyMs:            { type: Number },
+  jitterMs:             { type: Number },
+  packetLossPercent:    { type: Number },
 });
 
 export const CallLogModel = model<ICallLog>("CallLog", CallLogSchema);

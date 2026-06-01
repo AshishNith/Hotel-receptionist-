@@ -42,6 +42,7 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
   let geminiSession: any = null;
   let streamSid = "";
   let isInitiated = false;
+  let isToolCallPending = false;
   let startReceived = false;
   let greetingSent = false;
   let mediaFrameCount = 0;
@@ -87,14 +88,19 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
           try {
             // Handle tool calls via shared executor
             if ((msg as any).toolCall?.functionCalls) {
-              const callerKey = callerNumber.replace(/^\+/, "").trim() || "default";
-              const responses = await executeToolCalls(
-                (msg as any).toolCall.functionCalls,
-                callerKey,
-                callLogger
-              );
-              if (responses.length > 0 && geminiSession) {
-                geminiSession.sendToolResponse({ functionResponses: responses });
+              isToolCallPending = true;
+              try {
+                const callerKey = callerNumber.replace(/^\+/, "").trim() || "default";
+                const responses = await executeToolCalls(
+                  (msg as any).toolCall.functionCalls,
+                  callerKey,
+                  callLogger
+                );
+                if (responses.length > 0 && geminiSession) {
+                  geminiSession.sendToolResponse({ functionResponses: responses });
+                }
+              } finally {
+                isToolCallPending = false;
               }
             }
 
@@ -123,10 +129,12 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
                   callLogger.incrementPackets("out");
 
                   if (telephonyWs.readyState === WebSocket.OPEN) {
+                    const pcm24k = base64ToInt16Array(base64PCM);
+                    const pcm16k = resampleInt16Pcm(pcm24k, 24000, 16000);
+                    callLogger.addAudioChunk("agent", pcm16k);
+
                     if (isVobizStream) {
                       // Gemini 24kHz → 16kHz L16 for Vobiz
-                      const pcm24k = base64ToInt16Array(base64PCM);
-                      const pcm16k = resampleInt16Pcm(pcm24k, 24000, 16000);
                       telephonyWs.send(JSON.stringify({
                         event: "playAudio",
                         media: {
@@ -137,11 +145,10 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
                       }));
                     } else {
                       // Gemini 24kHz → 8kHz μ-law for Twilio
-                      const int16Arr = base64ToInt16Array(base64PCM);
-                      const mulawCount = Math.floor(int16Arr.length / 3);
+                      const mulawCount = Math.floor(pcm24k.length / 3);
                       const mulawBytes = new Uint8Array(mulawCount);
                       for (let i = 0; i < mulawCount; i++) {
-                        mulawBytes[i] = encodeMulaw(int16Arr[i * 3]);
+                        mulawBytes[i] = encodeMulaw(pcm24k[i * 3]);
                       }
                       const mulawBase64 = Buffer.from(mulawBytes.buffer, mulawBytes.byteOffset, mulawBytes.byteLength).toString("base64");
                       telephonyWs.send(JSON.stringify({
@@ -211,6 +218,10 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
 
       if (data.event === "media") {
         if (!isInitiated || !geminiSession) return;
+        if (isToolCallPending) {
+          // Discard G.711 stream frames during tool call execution to prevent policy violation 1008
+          return;
+        }
         const payloadBase64 = data.media.payload;
         mediaFrameCount++;
         callLogger.incrementPackets("in");
@@ -236,6 +247,7 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
         }
 
         const base64PCM = int16ArrayToBase64(pcm16Samples);
+        callLogger.addAudioChunk("user", pcm16Samples);
         geminiSession.sendRealtimeInput({
           audio: { data: base64PCM, mimeType: "audio/pcm;rate=16000" },
         });

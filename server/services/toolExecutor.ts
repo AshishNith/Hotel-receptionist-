@@ -201,24 +201,29 @@ export async function executeToolCalls(
           const { name, phone, email, roomType, checkIn, checkOut, guests, addons } = fc.args;
           response = await makeRoomReservation(name, phone, email, roomType, checkIn, checkOut, guests, addons || []);
           
-          // Optional: If guest email is provided and Google OAuth is active, automatically send a confirmation email!
-          const activeAuth = await getAuthenticatedOAuth2(callerPhoneKey);
-          if (activeAuth && email) {
+          // Fire-and-forget: send confirmation email in background WITHOUT blocking the tool response.
+          // This MUST NOT be awaited — Gemini Live has a strict timeout for tool responses and the
+          // Gmail API round-trip (OAuth refresh + send) can take 2-5 seconds, causing a 1008 disconnect.
+          const bookingResponse = response; // capture for closure
+          void (async () => {
             try {
+              const activeAuth = await getAuthenticatedOAuth2(callerPhoneKey);
+              if (!activeAuth || !email) return;
+
               const gmail = google.gmail({ version: "v1", auth: activeAuth });
-              const subject = `Booking Confirmation - The Grand Imperial Hotel (${response.bookingId})`;
+              const subject = `Booking Confirmation - The Grand Imperial Hotel (${bookingResponse.bookingId})`;
               const body = `
                 <h3>Thank you for choosing The Grand Imperial Hotel!</h3>
                 <p>Dear ${name},</p>
                 <p>Your room booking has been successfully confirmed. Here are your reservation details:</p>
                 <ul>
-                  <li><strong>Booking ID:</strong> ${response.bookingId}</li>
-                  <li><strong>Room Type:</strong> ${response.roomType}</li>
+                  <li><strong>Booking ID:</strong> ${bookingResponse.bookingId}</li>
+                  <li><strong>Room Type:</strong> ${bookingResponse.roomType}</li>
                   <li><strong>Check-in Date:</strong> ${checkIn}</li>
                   <li><strong>Check-out Date:</strong> ${checkOut}</li>
                   <li><strong>Guests:</strong> ${guests}</li>
-                  <li><strong>Total Price:</strong> Rs. ${response.totalPrice}</li>
-                  <li><strong>Add-ons Selected:</strong> ${response.addons && response.addons.length > 0 ? response.addons.join(", ") : "None"}</li>
+                  <li><strong>Total Price:</strong> Rs. ${bookingResponse.totalPrice}</li>
+                  <li><strong>Add-ons Selected:</strong> ${bookingResponse.addons && bookingResponse.addons.length > 0 ? bookingResponse.addons.join(", ") : "None"}</li>
                 </ul>
                 <p>We look forward to welcoming you soon!</p>
                 <p>Best Regards,<br/>Diya - Hotel AI Receptionist</p>
@@ -239,7 +244,7 @@ export async function executeToolCalls(
             } catch (mailErr) {
               console.warn("[ToolExecutor] Failed to send automated confirmation email:", mailErr);
             }
-          }
+          })();
           break;
         }
 

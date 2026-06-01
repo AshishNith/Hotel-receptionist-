@@ -58,6 +58,10 @@ export interface CallLogEntry {
   transcriptCount?: number;
   toolCallCount?: number;
   errorMessage?: string;
+  recordingUrl?: string;
+  latencyMs?: number;
+  jitterMs?: number;
+  packetLossPercent?: number;
 }
 
 export interface CallLogDetail extends CallLogEntry {

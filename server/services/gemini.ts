@@ -140,8 +140,59 @@ export const hotelRoomTools: FunctionDeclaration[] = [
   }
 ];
 
+export const googleWorkspaceTools: FunctionDeclaration[] = [
+  {
+    name: "list_upcoming_meetings",
+    description: "Lists upcoming calendar events and meetings from the user's primary Google Calendar.",
+    parametersJsonSchema: {
+      type: Type.OBJECT,
+      properties: {
+        maxResults: { type: Type.INTEGER, description: "Maximum number of events to return. Defaults to 5." }
+      }
+    }
+  },
+  {
+    name: "create_calendar_event",
+    description: "Schedules a new calendar event in the user's primary Google Calendar.",
+    parametersJsonSchema: {
+      type: Type.OBJECT,
+      properties: {
+        summary: { type: Type.STRING, description: "Title or summary of the event" },
+        description: { type: Type.STRING, description: "Optional detailed description of the event" },
+        startTime: { type: Type.STRING, description: "ISO 8601 formatted start time (e.g. '2026-06-01T10:00:00Z')" },
+        endTime: { type: Type.STRING, description: "ISO 8601 formatted end time (e.g. '2026-06-01T11:00:00Z')" }
+      },
+      required: ["summary", "startTime", "endTime"]
+    }
+  },
+  {
+    name: "send_gmail_message",
+    description: "Sends an email message via the user's Gmail account.",
+    parametersJsonSchema: {
+      type: Type.OBJECT,
+      properties: {
+        recipientEmail: { type: Type.STRING, description: "Recipient's email address" },
+        subject: { type: Type.STRING, description: "Subject of the email" },
+        body: { type: Type.STRING, description: "Body of the email in plain text or HTML" }
+      },
+      required: ["recipientEmail", "subject", "body"]
+    }
+  },
+  {
+    name: "read_latest_emails",
+    description: "Retrieves the user's latest unread email messages from their Gmail inbox.",
+    parametersJsonSchema: {
+      type: Type.OBJECT,
+      properties: {
+        maxResults: { type: Type.INTEGER, description: "Maximum number of unread emails to read. Defaults to 3." }
+      }
+    }
+  }
+];
+
 export const allToolDeclarations: FunctionDeclaration[] = [
   ...hotelRoomTools,
+  ...googleWorkspaceTools,
 ];
 
 /** Model identifier used for Gemini Live connections. */

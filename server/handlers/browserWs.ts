@@ -3,17 +3,36 @@ import type { LiveServerMessage } from "@google/genai";
 import { getGeminiClient, getCompiledSystemInstruction, allToolDeclarations, GEMINI_MODEL, Modality } from "../services/gemini.js";
 import { executeToolCalls } from "../services/toolExecutor.js";
 import { CallLogger } from "../services/callLogger.js";
+import { base64ToInt16Array, resampleInt16Pcm } from "../services/audioCodec.js";
 
 /**
  * Handles a browser WebSocket connection at /api/live.
  * Receives setup + raw PCM audio from the browser and pipes it to Gemini Live.
  */
+/** Timeout (ms) for individual tool executions. If a tool doesn't return in this time, we return an error to Gemini. */
+const TOOL_EXECUTION_TIMEOUT_MS = 12_000;
+
 export async function handleBrowserWebSocket(clientWs: WebSocket): Promise<void> {
   console.log("[WS] Client connected. Waiting for setup details...");
 
   let geminiSession: any = null;
   let isInitiated = false;
+  let isToolCallPending = false;
+  let sessionAlive = false;
   let callLogger: CallLogger | null = null;
+
+  /** Safe wrapper: only sends if clientWs is still open. Prevents crashes during tool execution. */
+  function safeSend(payload: object): boolean {
+    try {
+      if (clientWs.readyState === 1 /* WebSocket.OPEN */) {
+        clientWs.send(JSON.stringify(payload));
+        return true;
+      }
+    } catch (err) {
+      console.warn("[WS] safeSend failed:", (err as Error).message);
+    }
+    return false;
+  }
 
   clientWs.on("message", async (data) => {
     try {
@@ -49,14 +68,43 @@ export async function handleBrowserWebSocket(clientWs: WebSocket): Promise<void>
                 try {
                   // Handle tool calls
                   if ((msg as any).toolCall?.functionCalls) {
-                    const responses = await executeToolCalls(
-                      (msg as any).toolCall.functionCalls,
-                      googlePhoneKey,
-                      callLogger ?? undefined
-                    );
+                    isToolCallPending = true;
+                    safeSend({ type: "status", message: "tool-active" });
+                    try {
+                      // Race the tool execution against a timeout to prevent Gemini from
+                      // disconnecting due to the tool response taking too long.
+                      const toolPromise = executeToolCalls(
+                        (msg as any).toolCall.functionCalls,
+                        googlePhoneKey,
+                        callLogger ?? undefined
+                      );
+                      const timeoutPromise = new Promise<never>((_, reject) =>
+                        setTimeout(() => reject(new Error("Tool execution timed out")), TOOL_EXECUTION_TIMEOUT_MS)
+                      );
 
-                    if (responses.length > 0 && geminiSession) {
-                      geminiSession.sendToolResponse({ functionResponses: responses });
+                      let responses;
+                      try {
+                        responses = await Promise.race([toolPromise, timeoutPromise]);
+                      } catch (timeoutErr) {
+                        console.error("[WS] Tool execution timed out, sending error response to Gemini");
+                        // Construct error responses for every pending function call
+                        responses = (msg as any).toolCall.functionCalls.map((fc: any) => ({
+                          id: fc.id,
+                          name: fc.name,
+                          response: { error: "Tool execution timed out. Please inform the caller and try again." },
+                        }));
+                      }
+
+                      if (responses.length > 0 && geminiSession && sessionAlive) {
+                        try {
+                          geminiSession.sendToolResponse({ functionResponses: responses });
+                        } catch (sendErr) {
+                          console.error("[WS] Failed to send tool response to Gemini:", (sendErr as Error).message);
+                        }
+                      }
+                    } finally {
+                      isToolCallPending = false;
+                      safeSend({ type: "status", message: "tool-inactive" });
                     }
                   }
 
@@ -65,29 +113,34 @@ export async function handleBrowserWebSocket(clientWs: WebSocket): Promise<void>
                   if (parts) {
                     for (const part of parts) {
                       if (part.inlineData?.data) {
-                        clientWs.send(JSON.stringify({ type: "audio", data: part.inlineData.data }));
+                        safeSend({ type: "audio", data: part.inlineData.data });
                         callLogger?.incrementPackets("out");
+
+                        // Record agent audio chunk (24kHz -> 16kHz PCM mono)
+                        const pcm24 = base64ToInt16Array(part.inlineData.data);
+                        const pcm16 = resampleInt16Pcm(pcm24, 24000, 16000);
+                        callLogger?.addAudioChunk("agent", pcm16);
                       }
                       if (part.text) {
-                        clientWs.send(JSON.stringify({ type: "output-transcription", text: part.text }));
+                        safeSend({ type: "output-transcription", text: part.text });
                         callLogger?.addTranscript("agent", part.text);
                       }
                     }
                   }
 
                   if (msg.serverContent?.interrupted) {
-                    clientWs.send(JSON.stringify({ type: "interrupted" }));
+                    safeSend({ type: "interrupted" });
                   }
 
                   // Transcription events
                   if (msg.serverContent?.outputTranscription?.text) {
                     const text = msg.serverContent.outputTranscription.text;
-                    clientWs.send(JSON.stringify({ type: "output-transcription", text }));
+                    safeSend({ type: "output-transcription", text });
                     callLogger?.addTranscript("agent", text);
                   }
                   if (msg.serverContent?.inputTranscription?.text) {
                     const text = msg.serverContent.inputTranscription.text;
-                    clientWs.send(JSON.stringify({ type: "input-transcription", text }));
+                    safeSend({ type: "input-transcription", text });
                     callLogger?.addTranscript("user", text);
                   }
                 } catch (err: any) {
@@ -96,11 +149,13 @@ export async function handleBrowserWebSocket(clientWs: WebSocket): Promise<void>
               },
               onclose: () => {
                 console.log("[WS] Gemini connection closed.");
-                clientWs.send(JSON.stringify({ type: "status", message: "disconnected", detail: "Gemini connection closed" }));
+                sessionAlive = false;
+                safeSend({ type: "status", message: "disconnected", detail: "Gemini connection closed" });
               },
               onerror: (err: any) => {
                 console.error("[WS] Gemini error:", err);
-                clientWs.send(JSON.stringify({ type: "error", message: err?.message || "Gemini Live API error" }));
+                sessionAlive = false;
+                safeSend({ type: "error", message: err?.message || "Gemini Live API error" });
               },
             },
             config: {
@@ -117,12 +172,13 @@ export async function handleBrowserWebSocket(clientWs: WebSocket): Promise<void>
           });
 
           isInitiated = true;
+          sessionAlive = true;
           callLogger.markConnected();
-          clientWs.send(JSON.stringify({
+          safeSend({
             type: "status",
             message: "connected",
             callId: callLogger.getCallId(),
-          }));
+          });
           console.log("[WS] Gemini Live session connected!");
         } catch (err: any) {
           console.error("[WS] Failed to connect to Gemini Live:", err);
@@ -138,11 +194,32 @@ export async function handleBrowserWebSocket(clientWs: WebSocket): Promise<void>
 
       // Handle raw audio input
       if (message.type === "audio") {
-        if (!isInitiated || !geminiSession) return;
+        if (!isInitiated || !geminiSession || !sessionAlive) return;
+        if (isToolCallPending) {
+          // Discard incoming audio packets while a tool call is active to prevent Policy Violation 1008
+          return;
+        }
+
+        // Record user audio chunk (16kHz PCM mono)
+        const pcm16 = base64ToInt16Array(message.data);
+        callLogger?.addAudioChunk("user", pcm16);
+
         geminiSession.sendRealtimeInput({
           audio: { data: message.data, mimeType: "audio/pcm;rate=16000" },
         });
         callLogger?.incrementPackets("in");
+        return;
+      }
+
+      if (message.type === "ping") {
+        clientWs.send(JSON.stringify({ type: "pong", id: message.id }));
+        return;
+      }
+
+      if (message.type === "telemetry") {
+        if (callLogger) {
+          callLogger.setTelemetry(message.latencyMs, message.jitterMs);
+        }
         return;
       }
 

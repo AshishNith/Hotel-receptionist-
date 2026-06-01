@@ -1,2 +1,9 @@
 BookingID,Name,Phone,Email,RoomType,CheckIn,CheckOut,Guests,TotalPrice,Status,Addons
 BK-8056,Ashish Ranjan,9934225353,23bme025@nith.ac.in,Deluxe Room,2026-05-28,2026-05-29,2,3500,Booked,
+BK-8066,Guest Name,1234567890,guest@example.com,Executive Suite,2026-06-01,2026-06-02,2,6500,Booked,
+BK-4926,Guest Name,1234567890,guest@example.com,Deluxe Room,2026-06-01,2026-06-02,1,3500,Booked,
+BK-6687,Ashish Ranjan,9934225353,23BME025@nith.ac.in,Deluxe Room,2026-06-02,2026-06-03,2,4100,Booked,breakfast
+BK-1293,Ashish Ranjan,9934225353,23bme025@nith.ac.in,Deluxe Room,2026-06-02,2026-06-03,2,3500,Booked,
+BK-8061,Ashish Ranjan,9934225353,23bme025@nits.ac.in,Deluxe Room,2026-06-02,2026-06-03,2,3500,Booked,
+BK-1119,Ashish Ranjan,9934225353,23bme025@nith.ac.in,Deluxe Room,2026-06-22,2026-06-23,2,3500,Booked,
+BK-9016,Ashish Ranjan,9934225353,23bme025@nith.ac.in,Deluxe Room,2026-06-22,2026-06-23,2,3500,Booked,

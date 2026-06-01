@@ -1,5 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { CallLogModel, type ICallLog, type ICallTranscript, type IToolCallRecord } from "../models/CallLog.js";
+import { writeWavFile } from "./audioRecorder.js";
+import path from "path";
 
 /**
  * Tracks a single call lifecycle and persists it to MongoDB.
@@ -9,6 +11,7 @@ export class CallLogger {
   private log: ICallLog;
   private dirty = false;
   private saveTimer: ReturnType<typeof setInterval> | null = null;
+  private audioChunks: Array<{ role: "user" | "agent"; timestamp: number; pcm: Int16Array }> = [];
 
   constructor(
     personaId: string,
@@ -102,6 +105,21 @@ export class CallLogger {
     // Don't set dirty for every packet — let auto-save handle it
   }
 
+  addAudioChunk(role: "user" | "agent", pcm: Int16Array): void {
+    this.audioChunks.push({
+      role,
+      timestamp: Date.now(),
+      pcm,
+    });
+  }
+
+  setTelemetry(latencyMs: number, jitterMs: number): void {
+    this.log.latencyMs = latencyMs;
+    this.log.jitterMs = jitterMs;
+    this.log.packetLossPercent = 0; // TCP-based WebSocket stream has 0% packet loss
+    this.dirty = true;
+  }
+
   markCompleted(reason?: string): void {
     this.log.status = "completed";
     this.log.endedAt = new Date();
@@ -130,9 +148,60 @@ export class CallLogger {
     await this.persist();
   }
 
+  /** Mix collected audio chunks chronologically. */
+  private mixAudioChunks(): Int16Array | null {
+    if (this.audioChunks.length === 0) return null;
+
+    const start = this.log.connectedAt || this.log.startedAt;
+    const startTimeMs = start.getTime();
+
+    let maxSampleIndex = 0;
+    const chunksWithOffsets = this.audioChunks.map(chunk => {
+      const offsetMs = Math.max(0, chunk.timestamp - startTimeMs);
+      const startSampleIndex = Math.floor(offsetMs * 16); // 16 samples per millisecond for 16kHz
+      const endSampleIndex = startSampleIndex + chunk.pcm.length;
+      if (endSampleIndex > maxSampleIndex) {
+        maxSampleIndex = endSampleIndex;
+      }
+      return {
+        ...chunk,
+        startSampleIndex,
+      };
+    });
+
+    if (maxSampleIndex === 0) return null;
+
+    const outputBuffer = new Int16Array(maxSampleIndex);
+
+    for (const chunk of chunksWithOffsets) {
+      for (let i = 0; i < chunk.pcm.length; i++) {
+        const destIndex = chunk.startSampleIndex + i;
+        if (destIndex < maxSampleIndex) {
+          let mixedSample = outputBuffer[destIndex] + chunk.pcm[i];
+          if (mixedSample > 32767) mixedSample = 32767;
+          else if (mixedSample < -32768) mixedSample = -32768;
+          outputBuffer[destIndex] = mixedSample;
+        }
+      }
+    }
+
+    return outputBuffer;
+  }
+
   /** Persist current state to MongoDB. */
   async persist(): Promise<void> {
     try {
+      if (this.audioChunks.length > 0) {
+        const pcmData = this.mixAudioChunks();
+        if (pcmData && pcmData.length > 0) {
+          const recordingFilename = `${this.log.callId}.wav`;
+          const recordingPath = path.join(process.cwd(), "recordings", recordingFilename);
+          writeWavFile(recordingPath, pcmData, 16000);
+          this.log.recordingUrl = `/recordings/${recordingFilename}`;
+        }
+        this.audioChunks = [];
+      }
+
       await CallLogModel.findOneAndUpdate(
         { callId: this.log.callId },
         this.log,

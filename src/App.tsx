@@ -93,6 +93,7 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState("");
   const [packetCount, setPacketCount] = useState(0);
   const [callStartTime, setCallStartTime] = useState<number | null>(null);
+  const [latencyMs, setLatencyMs] = useState<number | undefined>(undefined);
 
   // Sound activity states
   const [activeVoiceDetect, setActiveVoiceDetect] = useState(false);
@@ -108,6 +109,17 @@ export default function App() {
   const ambientNoiseRef = useRef<{ stop: () => void } | null>(null);
   const silenceCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastActivityTimeRef = useRef<number>(0);
+
+  // Coordinated muting & telemetry tracking refs
+  const isToolActiveRef = useRef(false);
+  const latencyTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const telemetryTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pingMapRef = useRef<Map<number, number>>(new Map());
+  const lastPacketTimeRef = useRef<number | null>(null);
+  const lastDeltaRef = useRef<number | null>(null);
+  const jitterSumRef = useRef<number>(0);
+  const jitterCountRef = useRef<number>(0);
+  const latencyHistoryRef = useRef<number[]>([]);
 
   // Callback / Timer references to bypass react closure issues in asynchronous event streams
   const isMutedRef = useRef(isMuted);
@@ -161,6 +173,24 @@ export default function App() {
       clearInterval(silenceCheckIntervalRef.current);
       silenceCheckIntervalRef.current = null;
     }
+
+    if (latencyTimerRef.current) {
+      clearInterval(latencyTimerRef.current);
+      latencyTimerRef.current = null;
+    }
+    if (telemetryTimerRef.current) {
+      clearInterval(telemetryTimerRef.current);
+      telemetryTimerRef.current = null;
+    }
+
+    pingMapRef.current.clear();
+    lastPacketTimeRef.current = null;
+    lastDeltaRef.current = null;
+    jitterSumRef.current = 0;
+    jitterCountRef.current = 0;
+    latencyHistoryRef.current = [];
+    isToolActiveRef.current = false;
+    setLatencyMs(undefined);
 
     if (speakerTimerRef.current) clearTimeout(speakerTimerRef.current);
     if (voiceTimerRef.current) clearTimeout(voiceTimerRef.current);
@@ -262,6 +292,17 @@ export default function App() {
         try {
           const payload = JSON.parse(event.data);
 
+          if (payload.type === "pong") {
+            const sendTime = pingMapRef.current.get(payload.id);
+            if (sendTime) {
+              const rtt = Date.now() - sendTime;
+              setLatencyMs(rtt);
+              latencyHistoryRef.current.push(rtt);
+              pingMapRef.current.delete(payload.id);
+            }
+            return;
+          }
+
           if (payload.type === "status") {
             if (payload.message === "connected") {
               setCallState("connected");
@@ -290,6 +331,44 @@ export default function App() {
                   handleEndCall();
                 }
               }, 1000);
+
+              // Latency measurement loop (WebSocket RTT RTT measurement)
+              let pingId = 0;
+              latencyTimerRef.current = setInterval(() => {
+                if (wsRef.current?.readyState === WebSocket.OPEN) {
+                  const id = pingId++;
+                  pingMapRef.current.set(id, Date.now());
+                  wsRef.current.send(JSON.stringify({ type: "ping", id }));
+                }
+              }, 4000);
+
+              // Periodic Telemetry Reporting loop (every 5 seconds)
+              telemetryTimerRef.current = setInterval(() => {
+                if (wsRef.current?.readyState === WebSocket.OPEN && latencyHistoryRef.current.length > 0) {
+                  const avgLat = Math.round(latencyHistoryRef.current.reduce((a, b) => a + b, 0) / latencyHistoryRef.current.length);
+                  const avgJitter = jitterCountRef.current > 0
+                    ? Math.round(jitterSumRef.current / jitterCountRef.current)
+                    : 0;
+
+                  wsRef.current.send(JSON.stringify({
+                    type: "telemetry",
+                    latencyMs: avgLat,
+                    jitterMs: avgJitter,
+                  }));
+
+                  // Reset trackers
+                  latencyHistoryRef.current = [];
+                  jitterSumRef.current = 0;
+                  jitterCountRef.current = 0;
+                }
+              }, 5000);
+            }
+
+            if (payload.message === "tool-active") {
+              isToolActiveRef.current = true;
+            }
+            if (payload.message === "tool-inactive") {
+              isToolActiveRef.current = false;
             }
             return;
           }
@@ -312,6 +391,19 @@ export default function App() {
 
           // Handle incoming audio stream packets (PCM)
           if (payload.type === "audio") {
+            // Jitter tracking (RFC 3550 variance calculations)
+            const now = Date.now();
+            if (lastPacketTimeRef.current !== null) {
+              const delta = now - lastPacketTimeRef.current;
+              if (lastDeltaRef.current !== null) {
+                const diff = Math.abs(delta - lastDeltaRef.current);
+                jitterSumRef.current += diff;
+                jitterCountRef.current++;
+              }
+              lastDeltaRef.current = delta;
+            }
+            lastPacketTimeRef.current = now;
+
             lastActivityTimeRef.current = Date.now(); // reset silence timer
             const rawAudio = payload.data;
             if (!rawAudio) return;
@@ -395,7 +487,7 @@ export default function App() {
       processor.connect(audioCtx.destination);
 
       processor.onaudioprocess = (e) => {
-        if (isMutedRef.current) return;
+        if (isMutedRef.current || isToolActiveRef.current) return;
         if (wsRef.current?.readyState !== WebSocket.OPEN) return;
 
         let rawData = e.inputBuffer.getChannelData(0);
@@ -1189,6 +1281,7 @@ exten => _X.,1,NoOp("Incoming Call routed to Gemini Voice Agent: ${selectedPerso
                   errorMessage={errorMessage}
                   activeSpeakerDetect={activeSpeakerDetect}
                   activeVoiceDetect={activeVoiceDetect}
+                  latencyMs={latencyMs}
                 />
               )}
             </section>
