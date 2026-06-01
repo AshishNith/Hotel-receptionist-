@@ -32,6 +32,7 @@ export const APP_URL = process.env.APP_URL || "";
 export const VOBIZ_AUTH_ID = process.env.VOBIZ_AUTH_ID || "";
 export const VOBIZ_AUTH_TOKEN = process.env.VOBIZ_AUTH_TOKEN || "";
 export const VOBIZ_FROM_NUMBER = process.env.VOBIZ_FROM_NUMBER || "";
+export const GOOGLE_SHEETS_SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "";
 
 // ─── Database Connection ────────────────────────────────────────
 export async function connectDatabase(): Promise<void> {
