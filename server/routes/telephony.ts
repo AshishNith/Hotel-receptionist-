@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getPublicAppUrl } from "../utils.js";
+import { getPublicAppUrl, logToFile } from "../utils.js";
 import {
   initiateOutboundCall,
   getCallState,
@@ -70,20 +70,29 @@ router.all("/vobiz/outbound-answer", (req, res) => {
   const personaId = req.query.personaId || "diya";
   const callId = (req.query.callId as string) || "";
 
-  console.log(`[Webhook] Outbound call answered! PersonaId: ${personaId}, CallId: ${callId}`);
+  logToFile(`[Webhook] /vobiz/outbound-answer hit! PersonaId: ${personaId}, CallId: ${callId}, URL: ${req.url}, Method: ${req.method}`);
+  logToFile(`[Webhook] Request Headers: ${JSON.stringify(req.headers)}`);
+  logToFile(`[Webhook] Request Body: ${JSON.stringify(req.body)}`);
+  logToFile(`[Webhook] Request Query: ${JSON.stringify(req.query)}`);
+  logToFile(`[Webhook] Resolved Public App URL: ${appUrl}`);
+  logToFile(`[Webhook] Resolved Stream URL: ${streamUrl}`);
 
   // Mark the call as in-progress
   if (callId) {
     updateCallStatus(callId, "in-progress");
   }
 
-  res.type("text/xml");
-  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+  const xmlResponse = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Stream bidirectional="true" keepCallAlive="true" audioTrack="inbound" contentType="audio/x-l16;rate=16000">
     ${streamUrl}/api/sip/live?personaId=${personaId}&amp;callerNumber=outbound&amp;callId=${callId}&amp;direction=outbound
   </Stream>
-</Response>`);
+</Response>`;
+
+  logToFile(`[Webhook] Sending XML Response:\n${xmlResponse}`);
+
+  res.type("text/xml");
+  res.send(xmlResponse);
 });
 
 // ─── Outbound Call: Initiate (REST API) ─────────────────────────
@@ -97,11 +106,13 @@ router.post("/outbound/call", async (req, res) => {
     }
 
     const appUrl = getPublicAppUrl(req);
+    logToFile(`[Outbound] Initiating call to: ${toNumber}, persona: ${personaId}, resolved appUrl: ${appUrl}`);
     const callState = await initiateOutboundCall(
       toNumber,
       personaId || "diya",
       appUrl
     );
+    logToFile(`[Outbound] Call initiated! ID: ${callState.callId}, UUID: ${callState.callUUID}, Status: ${callState.status}`);
 
     res.json({
       success: true,

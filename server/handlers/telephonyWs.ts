@@ -15,29 +15,33 @@ import {
  * Handles a telephony WebSocket connection at /api/twilio/live or /api/sip/live.
  * Receives G.711 μ-law (Twilio) or L16 PCM (Vobiz) audio, transcodes, and pipes to Gemini Live.
  */
+import { logToFile } from "../utils.js";
+
 export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: any): Promise<void> {
   const upgradeUrl = new URL(request.url || "", `http://localhost`);
   const isVobizStream = upgradeUrl.pathname === "/api/sip/live";
   const providerName = isVobizStream ? "Vobiz" : "Twilio";
   const provider = isVobizStream ? "vobiz" : "twilio";
 
-  console.log(`[${providerName}] New inbound phone stream opened.`);
+  logToFile(`[${providerName} WS] Connection initiated. Path: ${upgradeUrl.pathname}, Query: ${upgradeUrl.search}`);
 
   const personaId = upgradeUrl.searchParams.get("personaId") || "diya";
   const callerNumber = decodeURIComponent(upgradeUrl.searchParams.get("callerNumber") || "");
   const outboundCallId = upgradeUrl.searchParams.get("callId") || "";
   const direction = (upgradeUrl.searchParams.get("direction") || "inbound") as "inbound" | "outbound";
 
+  logToFile(`[${providerName} WS] Connection details -> personaId: ${personaId}, callerNumber: ${callerNumber}, outboundCallId: ${outboundCallId}, direction: ${direction}`);
+
   // Resolve persona
   let persona = await PersonaModel.findOne({ id: personaId });
   if (!persona) persona = await PersonaModel.findOne({});
   if (!persona) {
-    console.error(`[${providerName}] No persona found. Closing.`);
+    logToFile(`[${providerName} WS] Error: No persona found in database. Closing WebSocket.`);
     telephonyWs.close();
     return;
   }
 
-  console.log(`[${providerName}] Routing to: ${persona.name} (${persona.role}), From: ${callerNumber}, Direction: ${direction}`);
+  logToFile(`[${providerName} WS] Routing to persona: ${persona.name} (${persona.role})`);
 
   // Initialize call logger
   const callLogger = new CallLogger(persona.id, persona.name, callerNumber, provider as any, direction);
@@ -197,9 +201,13 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
 
     isInitiated = true;
     callLogger.markConnected();
+    logToFile(`[${providerName} WS] Successfully established Gemini Live session!`);
     sendGreeting();
   } catch (err: any) {
-    console.error(`[${providerName}] Failed to establish Gemini session:`, err);
+    logToFile(`[${providerName} WS] ERROR: Failed to establish Gemini session: ${err?.message || err}`);
+    if (err?.stack) {
+      logToFile(`[${providerName} WS] Stack: ${err.stack}`);
+    }
     callLogger.markFailed(err?.message || "Connection failed");
     await callLogger.finalize();
     telephonyWs.close();
@@ -213,7 +221,7 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
 
       if (data.event === "start") {
         streamSid = data.start?.streamSid || data.start?.streamId || data.streamSid || data.streamId || "";
-        console.log(`[${providerName}] Stream active: ${streamSid}`);
+        logToFile(`[${providerName} WS] Stream active event received. streamSid/streamId: ${streamSid}`);
         if (isVobizStream) {
           inboundEncoding = data.start?.mediaFormat?.encoding || inboundEncoding;
           inboundSampleRate = Number(data.start?.mediaFormat?.sampleRate || inboundSampleRate);
@@ -262,17 +270,17 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
       }
 
       if (data.event === "stop") {
-        console.log(`[${providerName}] Caller disconnected.`);
+        logToFile(`[${providerName} WS] Stop event received. Caller disconnected.`);
         telephonyWs.close();
         return;
       }
-    } catch (err) {
-      console.error(`[${providerName}] Parse error:`, err);
+    } catch (err: any) {
+      logToFile(`[${providerName} WS] ERROR parsing message: ${err?.message || err}`);
     }
   });
 
   telephonyWs.on("close", async () => {
-    console.log(`[${providerName}] Socket closed.`);
+    logToFile(`[${providerName} WS] Socket closed.`);
     if (geminiSession) {
       try { geminiSession.close(); } catch {}
     }
