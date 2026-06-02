@@ -45,10 +45,10 @@ ${transcriptText}
 
     // 4. Invoke Gemini API
     const ai = getGeminiClient();
-    logToFile(`[Summary Service] Requesting Gemini summary using model ${GEMINI_MODEL}...`);
+    logToFile(`[Summary Service] Requesting Gemini summary using model gemini-2.5-flash...`);
     
     const response = await ai.models.generateContent({
-      model: GEMINI_MODEL,
+      model: "gemini-2.5-flash",
       contents: prompt,
     });
 
