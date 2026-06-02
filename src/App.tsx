@@ -609,7 +609,7 @@ export default function App() {
 
   if (isClientPortal) {
     return (
-      <div className="min-h-screen bg-[#070301] text-white flex flex-col font-sans relative overflow-x-hidden antialiased select-none">
+      <div className="min-h-screen bg-[#070301] text-white flex flex-col font-sans relative antialiased select-none">
         
         {/* Cinematic Ambient Glow Layers (Immersive UI specification) */}
         <div className="absolute inset-0 z-0 opacity-40 pointer-events-none">
@@ -641,7 +641,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#070301] text-white flex flex-col font-sans relative overflow-x-hidden antialiased select-none">
+    <div className="min-h-screen bg-[#070301] text-white flex flex-col font-sans relative antialiased select-none">
       
       {/* Cinematic Ambient Glow Layers (Immersive UI specification) */}
       <div className="absolute inset-0 z-0 opacity-40 pointer-events-none">
