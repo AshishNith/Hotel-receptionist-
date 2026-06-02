@@ -10,6 +10,7 @@ import { AgentCreator } from "./components/AgentCreator";
 import { KnowledgeBaseManager } from "./components/KnowledgeBaseManager";
 import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
 import { OutboundCaller } from "./components/OutboundCaller";
+import { ClientPortal } from "./components/ClientPortal";
 import { float32ToInt16, arrayBufferToBase64, base64ToFloat32, startAmbientNoise } from "./utils/audio";
 import { 
   Phone, CheckCircle, Flame, Shield, Server, ArrowUpRight, 
@@ -603,6 +604,41 @@ export default function App() {
     startCommunicating(persona);
     setActivePage("call");
   };
+
+  const isClientPortal = window.location.pathname === "/client";
+
+  if (isClientPortal) {
+    return (
+      <div className="min-h-screen bg-[#070301] text-white flex flex-col font-sans relative overflow-x-hidden antialiased select-none">
+        
+        {/* Cinematic Ambient Glow Layers (Immersive UI specification) */}
+        <div className="absolute inset-0 z-0 opacity-40 pointer-events-none">
+          <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-emerald-600/20 rounded-full blur-[140px] opacity-25"></div>
+          <div className="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] bg-blue-900/30 rounded-full blur-[120px] opacity-30"></div>
+        </div>
+
+        {/* Brand Header */}
+        <header className="border-b border-white/5 bg-white/[0.01] backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex items-center justify-between shadow-2xl relative">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold tracking-tight shadow-md shadow-emerald-500/10">
+              CP
+            </div>
+            <div>
+              <h1 className="text-xs sm:text-sm font-semibold tracking-wide text-zinc-100 flex items-center gap-2 font-mono uppercase">
+                Grand Imperial <span className="text-[8px] font-mono font-bold uppercase py-0.5 px-2 rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]">Client Portal</span>
+              </h1>
+              <p className="text-[9px] font-mono text-zinc-500 tracking-widest mt-0.5 uppercase">White-Labeled AI Calling Operations</p>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Body */}
+        <main className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-6 z-10 flex flex-col justify-center">
+          <ClientPortal />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#070301] text-white flex flex-col font-sans relative overflow-x-hidden antialiased select-none">

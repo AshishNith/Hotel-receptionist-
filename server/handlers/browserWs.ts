@@ -4,6 +4,7 @@ import { getGeminiClient, getCompiledSystemInstruction, allToolDeclarations, GEM
 import { executeToolCalls } from "../services/toolExecutor.js";
 import { CallLogger } from "../services/callLogger.js";
 import { base64ToInt16Array, resampleInt16Pcm } from "../services/audioCodec.js";
+import { generateCallSummary } from "../services/summaryService.js";
 
 /**
  * Handles a browser WebSocket connection at /api/live.
@@ -237,7 +238,12 @@ export async function handleBrowserWebSocket(clientWs: WebSocket): Promise<void>
     if (geminiSession) {
       try { geminiSession.close(); } catch {}
     }
-    callLogger?.markCompleted("Client disconnected");
-    await callLogger?.finalize();
+    if (callLogger) {
+      callLogger.markCompleted("Client disconnected");
+      await callLogger.finalize();
+      
+      // Trigger background AI summarization!
+      void generateCallSummary(callLogger.getCallId());
+    }
   });
 }

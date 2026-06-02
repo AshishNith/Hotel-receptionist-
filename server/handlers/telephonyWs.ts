@@ -5,6 +5,7 @@ import { executeToolCalls } from "../services/toolExecutor.js";
 import { CallLogger } from "../services/callLogger.js";
 import { PersonaModel } from "../models/Persona.js";
 import { addCallTranscript, updateCallStatus } from "../services/vobizService.js";
+import { generateCallSummary } from "../services/summaryService.js";
 import {
   decodeMulaw, encodeMulaw,
   base64ToInt16Array, int16ArrayToBase64,
@@ -287,5 +288,8 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
     callLogger.markCompleted(direction === "outbound" ? "Outbound call ended" : "Caller disconnected");
     if (outboundCallId) updateCallStatus(outboundCallId, "completed");
     await callLogger.finalize();
+
+    // Trigger background AI summarization!
+    void generateCallSummary(callLogger.getCallId());
   });
 }

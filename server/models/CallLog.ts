@@ -31,6 +31,7 @@ export interface ICallLog {
   audioPacketsSent: number;
   errorMessage?: string;
   recordingUrl?: string;
+  summary?: string;
   latencyMs?: number;
   jitterMs?: number;
   packetLossPercent?: number;
@@ -73,6 +74,7 @@ const CallLogSchema = new Schema<ICallLog>({
   audioPacketsSent:     { type: Number, default: 0 },
   errorMessage:         { type: String },
   recordingUrl:         { type: String },
+  summary:              { type: String, default: "" },
   latencyMs:            { type: Number },
   jitterMs:             { type: Number },
   packetLossPercent:    { type: Number },
