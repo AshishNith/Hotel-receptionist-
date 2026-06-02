@@ -41,7 +41,8 @@ function generateCallId(): string {
 export async function initiateOutboundCall(
   toNumber: string,
   personaId: string,
-  appUrl: string
+  appUrl: string,
+  bookingId?: string
 ): Promise<OutboundCallState> {
   if (!VOBIZ_AUTH_ID || !VOBIZ_AUTH_TOKEN) {
     throw new Error("VoBiz credentials not configured. Set VOBIZ_AUTH_ID and VOBIZ_AUTH_TOKEN in .env");
@@ -55,7 +56,7 @@ export async function initiateOutboundCall(
   const callId = generateCallId();
 
   // Construct webhook URLs using the public app URL
-  const answerUrl = `${appUrl}/api/vobiz/outbound-answer?personaId=${encodeURIComponent(personaId)}&callId=${encodeURIComponent(callId)}`;
+  const answerUrl = `${appUrl}/api/vobiz/outbound-answer?personaId=${encodeURIComponent(personaId)}&callId=${encodeURIComponent(callId)}${bookingId ? `&bookingId=${encodeURIComponent(bookingId)}` : ""}`;
   const hangupUrl = `${appUrl}/api/vobiz/hangup`;
 
   console.log(`[VoBiz Outbound] Initiating call: ${fromNumber} → ${toNumber}`);

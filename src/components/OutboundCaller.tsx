@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Phone, PhoneOff, Loader2, CheckCircle, XCircle, Clock, ArrowUpRight } from "lucide-react";
+import { Phone, PhoneOff, Loader2, CheckCircle, XCircle, Clock, ArrowUpRight, Sparkles } from "lucide-react";
 
 interface TranscriptLine {
   role: "user" | "agent";
@@ -17,6 +17,9 @@ export function OutboundCaller() {
   const [transcript, setTranscript] = useState<TranscriptLine[]>([]);
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState("");
+
+  const [scanning, setScanning] = useState(false);
+  const [scanNotification, setScanNotification] = useState<string | null>(null);
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const durationRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -120,6 +123,34 @@ export function OutboundCaller() {
     if (durationRef.current) clearInterval(durationRef.current);
   };
 
+  const handleTriggerConfirmations = async () => {
+    setScanning(true);
+    setScanNotification(null);
+    try {
+      const res = await fetch("/api/bookings/trigger-confirmations", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (data.success) {
+        setScanNotification(
+          data.triggeredCount > 0
+            ? `Successfully triggered confirmation calls for ${data.triggeredCount} booking(s) arriving in the next 24 hours.`
+            : "Successfully scanned bookings. No bookings checked in within 24 hours require a confirmation call."
+        );
+      } else {
+        setScanNotification(`Failed to scan bookings: ${data.error || "Unknown error"}`);
+      }
+    } catch (err: any) {
+      setScanNotification(`Network error while scanning: ${err?.message || err}`);
+    } finally {
+      setScanning(false);
+      // Auto-clear notification after 8 seconds
+      setTimeout(() => {
+        setScanNotification(null);
+      }, 8000);
+    }
+  };
+
   const formatDuration = (s: number) => {
     const m = Math.floor(s / 60);
     const sec = s % 60;
@@ -132,7 +163,7 @@ export function OutboundCaller() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-white tracking-tight flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
@@ -144,7 +175,31 @@ export function OutboundCaller() {
             Initiate AI-powered calls via VoBiz SIP trunk
           </p>
         </div>
+        <button
+          onClick={handleTriggerConfirmations}
+          disabled={scanning}
+          className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 hover:from-emerald-500/20 hover:to-teal-500/20 border border-emerald-500/35 hover:border-emerald-500/50 text-emerald-400 hover:text-emerald-300 text-xs font-mono uppercase tracking-wider font-semibold transition duration-300 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed self-start sm:self-auto"
+        >
+          {scanning ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Scanning Bookings...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4" />
+              Scan & Confirm 24h Bookings
+            </>
+          )}
+        </button>
       </div>
+
+      {scanNotification && (
+        <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono flex items-center gap-3">
+          <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{scanNotification}</span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Dialer Card */}

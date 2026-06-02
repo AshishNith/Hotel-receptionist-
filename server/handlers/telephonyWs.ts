@@ -30,8 +30,9 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
   const callerNumber = decodeURIComponent(upgradeUrl.searchParams.get("callerNumber") || "");
   const outboundCallId = upgradeUrl.searchParams.get("callId") || "";
   const direction = (upgradeUrl.searchParams.get("direction") || "inbound") as "inbound" | "outbound";
+  const bookingId = upgradeUrl.searchParams.get("bookingId") || "";
 
-  logToFile(`[${providerName} WS] Connection details -> personaId: ${personaId}, callerNumber: ${callerNumber}, outboundCallId: ${outboundCallId}, direction: ${direction}`);
+  logToFile(`[${providerName} WS] Connection details -> personaId: ${personaId}, callerNumber: ${callerNumber}, outboundCallId: ${outboundCallId}, direction: ${direction}, bookingId: ${bookingId}`);
 
   // Resolve persona
   let persona = await PersonaModel.findOne({ id: personaId });
@@ -84,7 +85,42 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
   try {
     const ai = getGeminiClient();
     const baseInstruction = persona.systemInstruction || "You are a helpful calling agent.";
-    const instruction = await getCompiledSystemInstruction(baseInstruction, persona.knowledgeBaseId);
+    const compiledInstruction = await getCompiledSystemInstruction(baseInstruction, persona.knowledgeBaseId);
+    
+    let customBookingInstruction = "";
+    if (bookingId) {
+      try {
+        const { getBookingDetails } = await import("../services/hotelService.js");
+        const booking = await getBookingDetails(bookingId);
+        if (booking) {
+          logToFile(`[${providerName} WS] Found booking confirmation context for ${booking.bookingId} (${booking.name})! Injected instruction.`);
+          customBookingInstruction = `\n\n### CRITICAL CALL OUTBOUND MISSION: BOOKING CONFIRMATION
+You are actively calling the guest ${booking.name} on their phone number to confirm their upcoming room reservation.
+Booking ID: ${booking.bookingId}
+Check-In Date: ${booking.checkIn}
+Check-Out Date: ${booking.checkOut}
+Room Booked: ${booking.roomType}
+Total Price: Rs. ${booking.totalPrice}
+Current Status: ${booking.status}
+
+Your strict conversational goal:
+1. Warmly greet the guest by their name (${booking.name}) and state you are calling from the Grand Imperial Hotel to confirm their reservation checking in tomorrow (${booking.checkIn}).
+2. Ask them if they are still planning to arrive and check in tomorrow as scheduled.
+3. If they confirm they are coming (Yes/Planning to check in):
+   - Thank them warmly, let them know we are excited to welcome them, and state that their reservation is now fully confirmed.
+   - Reassure them that you've updated their booking status to Confirmed.
+4. If they wish to cancel (No/Not coming):
+   - Politely acknowledge their cancellation, state that you will cancel the reservation for them immediately, and wish them well.
+   - You MUST immediately execute the \`modify_or_cancel_reservation\` tool call with action="cancel" and bookingId="${booking.bookingId}" to cancel the booking immediately during the call!
+5. Keep the conversation extremely natural, warm, and highly efficient.
+`;
+        }
+      } catch (err: any) {
+        logToFile(`[${providerName} WS] Error loading booking details for confirmation instruction: ${err?.message || err}`);
+      }
+    }
+
+    const instruction = compiledInstruction + customBookingInstruction;
     const temperature = typeof persona.temperature === "number" ? persona.temperature : 0.7;
 
     console.log(`[${providerName}] Connecting Gemini Live. Voice: ${persona.voice}. Temp: ${temperature}`);

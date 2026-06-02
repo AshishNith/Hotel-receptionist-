@@ -33,9 +33,13 @@ You are a highly efficient assistant for a premium hotel. Review the phone call 
 Generate a concise, professional summary formatted with clear headers and bullet points.
 
 Requirements:
-1. Topic: Briefly state what the main focus of the call was (e.g., Room Booking, Room Availability Check, Food Order, Hotel Policy inquiry).
+1. Topic: Briefly state what the main focus of the call was (e.g., Room Booking, Room Availability Check, Food Order, Hotel Policy inquiry, Booking Confirmation).
 2. Key Details: Bullet-point the crucial details discussed (such as dates, room types, guest name, phone, email, food items, total price, specific hotel FAQ answers).
 3. Outcome: State the final result of the call in one clear line (e.g., "Successfully reserved room BK-1234", "Food ordered successfully", "Answered pool timings inquiry", "Call hung up during discussion").
+4. Guest operational status (Mandatory for booking confirmation calls): If this call was a booking confirmation call, you MUST explicitly output a line containing:
+   "GUEST_STATUS: Confirmed" (if they explicitly stated they are coming and plan to check in)
+   "GUEST_STATUS: Cancelled" (if they explicitly requested a cancellation or stated they are not coming)
+   "GUEST_STATUS: Uncertain" (if they did not give a clear confirmation, were unreachable, or call hung up before they answered)
 
 Keep the tone polished, objective, and highly readable. Avoid meta-commentary or generic introductory phrases.
 
@@ -60,23 +64,58 @@ ${transcriptText}
     
     logToFile(`[Summary Service] Successfully saved summary for call ${callId} to MongoDB!`);
 
-    // 6. Sync to Google Sheets and local CSV if reservation was made during this call
+    // 6. Sync to Google Sheets and local CSV if reservation was made or updated during this call
     try {
       const bookingToolCalls = call.toolCallsUsed.filter(
         (tc) => tc.name === "makeRoomReservation" && tc.result?.success && tc.result?.bookingId
       );
 
+      let confirmationBookingId: string | null = null;
+      let bookingStatusUpdate: string | null = null;
+
+      if (summaryText.includes("GUEST_STATUS: Confirmed")) {
+        bookingStatusUpdate = "Confirmed";
+      } else if (summaryText.includes("GUEST_STATUS: Cancelled")) {
+        bookingStatusUpdate = "Cancelled";
+      }
+
+      // If call is outbound and callerNumber represents outbound dialer
+      const isOutboundCall = call.callerNumber === "outbound" || call.direction === "outbound";
+      if (isOutboundCall) {
+        const cancelToolCall = call.toolCallsUsed.find(tc => tc.name === "modify_or_cancel_reservation" && tc.args?.bookingId);
+        if (cancelToolCall) {
+          confirmationBookingId = cancelToolCall.args.bookingId;
+        }
+      }
+
+      const appUrl = process.env.APP_URL || "https://hotel-receptionist-agent.onrender.com";
+      const absoluteRecordingUrl = call.recordingUrl ? `${appUrl.replace(/\/$/, "")}${call.recordingUrl}` : "";
+
+      const { updateBookingWithCallSummary } = await import("./hotelService.js");
+
+      // A. Sync new room bookings
       if (bookingToolCalls.length > 0) {
-        logToFile(`[Summary Service] Found ${bookingToolCalls.length} booking(s) in call ${callId}. Syncing summary and recording to Google Sheet...`);
-        const { updateBookingWithCallSummary } = await import("./hotelService.js");
-
-        const appUrl = process.env.APP_URL || "https://hotel-receptionist-agent.onrender.com";
-        const absoluteRecordingUrl = call.recordingUrl ? `${appUrl.replace(/\/$/, "")}${call.recordingUrl}` : "";
-
+        logToFile(`[Summary Service] Found ${bookingToolCalls.length} new booking(s) in call ${callId}. Syncing summary...`);
         for (const tc of bookingToolCalls) {
           const bId = tc.result.bookingId;
-          logToFile(`[Summary Service] Synchronizing summary and recording to Google Sheet for booking: ${bId}`);
           await updateBookingWithCallSummary(bId, summaryText, absoluteRecordingUrl);
+        }
+      }
+
+      // B. Sync confirmation call updates
+      const targetBookingId = confirmationBookingId || call.toolCallsUsed.find(tc => tc.name === "modify_or_cancel_reservation" && tc.args?.bookingId)?.args?.bookingId;
+      
+      if (targetBookingId && bookingStatusUpdate) {
+        logToFile(`[Summary Service] Confirmation resolved status: ${bookingStatusUpdate} for booking: ${targetBookingId}. Updating Sheet...`);
+        await updateBookingWithCallSummary(targetBookingId, summaryText, absoluteRecordingUrl, bookingStatusUpdate);
+      } else if (bookingStatusUpdate) {
+        // Fallback: Scan transcript for Booking ID (BK-XXXX) matching patterns
+        const transcriptTextCombined = call.transcript.map(t => t.text).join(" ");
+        const match = transcriptTextCombined.match(/BK-\d{4}/i);
+        if (match) {
+          const matchedBookingId = match[0].toUpperCase();
+          logToFile(`[Summary Service] Found booking ID ${matchedBookingId} in transcript. Status resolved: ${bookingStatusUpdate}. Updating Sheet...`);
+          await updateBookingWithCallSummary(matchedBookingId, summaryText, absoluteRecordingUrl, bookingStatusUpdate);
         }
       }
     } catch (syncErr: any) {

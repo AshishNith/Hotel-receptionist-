@@ -60,6 +60,10 @@ export const ClientPortal: React.FC = () => {
   const [selectedCall, setSelectedCall] = useState<CallLogDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
+  // ─── Booking Confirmation States ────────────────────────────────
+  const [scanning, setScanning] = useState(false);
+  const [scanNotification, setScanNotification] = useState<string | null>(null);
+
   const durationTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -167,6 +171,35 @@ export const ClientPortal: React.FC = () => {
     } catch (err: any) {
       setCallState("idle");
       setDialerError(err?.message || "Outbound calling error.");
+    }
+  };
+
+  const handleTriggerConfirmations = async () => {
+    setScanning(true);
+    setScanNotification(null);
+    try {
+      const res = await fetch("/api/bookings/trigger-confirmations", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (data.success) {
+        setScanNotification(
+          data.triggeredCount > 0
+            ? `Successfully scanned and triggered confirmation calls for ${data.triggeredCount} booking(s) arriving in the next 24 hours.`
+            : "Successfully scanned bookings. No bookings checked in within 24 hours required a confirmation call."
+        );
+        fetchCalls(1);
+      } else {
+        setScanNotification(`Failed to scan bookings: ${data.error || "Unknown error"}`);
+      }
+    } catch (err: any) {
+      setScanNotification(`Network error while scanning: ${err?.message || err}`);
+    } finally {
+      setScanning(false);
+      // Auto-clear notification after 8 seconds
+      setTimeout(() => {
+        setScanNotification(null);
+      }, 8000);
     }
   };
 
@@ -339,14 +372,40 @@ export const ClientPortal: React.FC = () => {
 
       {/* ─── Call History Table ─── */}
       <div className="bg-white/[0.01] backdrop-blur-2xl border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
-        <div className="px-6 py-5 border-b border-white/5 flex items-center justify-between">
+        <div className="px-6 py-5 border-b border-white/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h4 className="text-xs font-mono uppercase tracking-[0.2em] text-zinc-500 font-bold flex items-center gap-2">
             <Calendar className="w-4 h-4 text-emerald-400" /> Recent Call Audits
           </h4>
-          <span className="text-[10px] font-mono text-zinc-500 font-bold bg-white/5 border border-white/5 px-2 py-0.5 rounded">
-            {pagination.total} records
-          </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleTriggerConfirmations}
+              disabled={scanning}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 border border-emerald-500/30 hover:border-emerald-500/50 text-emerald-400 hover:text-emerald-300 text-[10px] font-mono uppercase tracking-wider font-semibold transition duration-300 flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {scanning ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Scanning Bookings...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Scan & Confirm 24h Bookings
+                </>
+              )}
+            </button>
+            <span className="text-[10px] font-mono text-zinc-500 font-bold bg-white/5 border border-white/5 px-2 py-1.5 rounded-xl">
+              {pagination.total} records
+            </span>
+          </div>
         </div>
+
+        {scanNotification && (
+          <div className="px-6 py-4 bg-emerald-500/10 border-b border-emerald-500/20 text-emerald-400 text-xs font-mono flex items-center gap-3">
+            <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>{scanNotification}</span>
+          </div>
+        )}
 
         {loadingHistory ? (
           <div className="py-20 text-center text-zinc-500 font-mono text-xs flex flex-col items-center justify-center gap-2">

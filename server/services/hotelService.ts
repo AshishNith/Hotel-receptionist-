@@ -17,7 +17,7 @@ const INVENTORY = {
 };
 
 const DATA_DIR = path.resolve(process.cwd(), "data");
-const BOOKINGS_CSV = path.join(DATA_DIR, "bookings.csv");
+export const BOOKINGS_CSV = path.join(DATA_DIR, "bookings.csv");
 const FOOD_ORDERS_CSV = path.join(DATA_DIR, "food_orders.csv");
 const ROOMS_JSON = path.join(DATA_DIR, "rooms.json");
 const MENU_JSON = path.join(DATA_DIR, "restaurant_menu.json");
@@ -26,7 +26,7 @@ const FAQ_CSV = path.join(DATA_DIR, "hotel_faq.csv");
 /**
  * Checks if Google Sheets is fully configured and authenticated.
  */
-async function isGoogleSheetsActive(): Promise<boolean> {
+export async function isGoogleSheetsActive(): Promise<boolean> {
   if (!GOOGLE_SHEETS_SPREADSHEET_ID) return false;
   try {
     const auth = await getSheetsAuthClient();
@@ -37,7 +37,7 @@ async function isGoogleSheetsActive(): Promise<boolean> {
 }
 
 // Helper: Ensure CSV file exists with header
-function ensureCSVExists(filePath: string, header: string) {
+export function ensureCSVExists(filePath: string, header: string) {
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   }
@@ -47,7 +47,7 @@ function ensureCSVExists(filePath: string, header: string) {
 }
 
 // CSV Parser Helper
-function parseCSV(content: string): string[][] {
+export function parseCSV(content: string): string[][] {
   const lines = content.split(/\r?\n/);
   const result: string[][] = [];
   for (const line of lines) {
@@ -736,20 +736,26 @@ export async function getHotelFaq(query: string) {
 }
 
 /**
- * Updates an existing reservation row in Google Sheets and local bookings.csv with Call Summary & Call Recording URL.
+ * Updates an existing reservation row in Google Sheets and local bookings.csv with Call Summary & Call Recording URL, and optionally booking Status.
  */
 export async function updateBookingWithCallSummary(
   bookingId: string,
   summary: string,
-  recordingUrl: string
+  recordingUrl: string,
+  bookingStatus?: string
 ): Promise<void> {
   const useSheets = await isGoogleSheetsActive();
+  const updates: Record<string, string> = {
+    CallSummary: summary,
+    CallRecordingUrl: recordingUrl,
+  };
+  if (bookingStatus) {
+    updates.Status = bookingStatus;
+  }
+
   if (useSheets) {
     try {
-      await updateSheetRow("Bookings", "BookingID", bookingId, {
-        CallSummary: summary,
-        CallRecordingUrl: recordingUrl,
-      });
+      await updateSheetRow("Bookings", "BookingID", bookingId, updates);
     } catch (err: any) {
       logToFile(`[HotelService] Google Sheets update failed for booking ${bookingId}: ${err?.message || err}`);
     }
@@ -769,12 +775,14 @@ export async function updateBookingWithCallSummary(
 
       const callSummaryIdx = header.indexOf("CallSummary");
       const recordingUrlIdx = header.indexOf("CallRecordingUrl");
+      const statusIdx = header.indexOf("Status");
 
       let updated = false;
       for (const row of dataRows) {
         if (row[0]?.toUpperCase() === bookingId.toUpperCase()) {
           if (callSummaryIdx !== -1) row[callSummaryIdx] = summary;
           if (recordingUrlIdx !== -1) row[recordingUrlIdx] = recordingUrl;
+          if (bookingStatus && statusIdx !== -1) row[statusIdx] = bookingStatus;
           updated = true;
           break;
         }
@@ -783,10 +791,73 @@ export async function updateBookingWithCallSummary(
       if (updated) {
         const newContent = [header, ...dataRows].map((r) => toCSVLine(r)).join("\n") + "\n";
         fs.writeFileSync(BOOKINGS_CSV, newContent, "utf8");
-        logToFile(`[HotelService] Local bookings.csv updated for booking ${bookingId}`);
+        logToFile(`[HotelService] Local bookings.csv updated for booking ${bookingId} with status: ${bookingStatus || "N/A"}`);
       }
     }
   } catch (csvErr: any) {
     logToFile(`[HotelService] Failed to update local CSV for booking ${bookingId}: ${csvErr?.message || csvErr}`);
   }
+}
+
+/**
+ * Loads detailed parameters of a single booking by BookingID.
+ */
+export async function getBookingDetails(bookingId: string) {
+  const useSheets = await isGoogleSheetsActive();
+  let rows: string[][] = [];
+
+  if (useSheets) {
+    try {
+      rows = await readSheetRows("Bookings");
+    } catch (err: any) {
+      logToFile(`[HotelService] Google Sheets read failed for getBookingDetails, falling back to CSV: ${err?.message || err}`);
+      ensureCSVExists(
+        BOOKINGS_CSV,
+        "BookingID,Name,Phone,Email,RoomType,CheckIn,CheckOut,Guests,TotalPrice,Status,Addons,CallSummary,CallRecordingUrl"
+      );
+      const content = fs.readFileSync(BOOKINGS_CSV, "utf8");
+      rows = parseCSV(content);
+    }
+  } else {
+    ensureCSVExists(
+      BOOKINGS_CSV,
+      "BookingID,Name,Phone,Email,RoomType,CheckIn,CheckOut,Guests,TotalPrice,Status,Addons,CallSummary,CallRecordingUrl"
+    );
+    const content = fs.readFileSync(BOOKINGS_CSV, "utf8");
+    rows = parseCSV(content);
+  }
+
+  if (rows.length <= 1) return null;
+
+  const header = rows[0];
+  const dataRows = rows.slice(1);
+
+  const idIdx = header.indexOf("BookingID");
+  const nameIdx = header.indexOf("Name");
+  const phoneIdx = header.indexOf("Phone");
+  const emailIdx = header.indexOf("Email");
+  const roomTypeIdx = header.indexOf("RoomType");
+  const checkInIdx = header.indexOf("CheckIn");
+  const checkOutIdx = header.indexOf("CheckOut");
+  const guestsIdx = header.indexOf("Guests");
+  const totalPriceIdx = header.indexOf("TotalPrice");
+  const statusIdx = header.indexOf("Status");
+  const addonsIdx = header.indexOf("Addons");
+
+  const row = dataRows.find((r) => r[0]?.toUpperCase() === bookingId.toUpperCase());
+  if (!row) return null;
+
+  return {
+    bookingId: row[idIdx] || "",
+    name: row[nameIdx] || "",
+    phone: row[phoneIdx] || "",
+    email: row[emailIdx] || "",
+    roomType: row[roomTypeIdx] || "",
+    checkIn: row[checkInIdx] || "",
+    checkOut: row[checkOutIdx] || "",
+    guests: Number(row[guestsIdx]) || 0,
+    totalPrice: Number(row[totalPriceIdx]) || 0,
+    status: row[statusIdx] || "",
+    addons: row[addonsIdx] ? row[addonsIdx].split(";") : [],
+  };
 }
