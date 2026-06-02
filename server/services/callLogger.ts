@@ -199,7 +199,6 @@ export class CallLogger {
           writeWavFile(recordingPath, pcmData, 16000);
           this.log.recordingUrl = `/recordings/${recordingFilename}`;
         }
-        this.audioChunks = [];
       }
 
       await CallLogModel.findOneAndUpdate(
