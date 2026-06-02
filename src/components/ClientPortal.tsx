@@ -584,10 +584,10 @@ export const ClientPortal: React.FC = () => {
                 </div>
               )}
 
-              {/* Gemini AI Call Summary */}
+              {/* AI Call Summary */}
               <div className="bg-gradient-to-br from-orange-500/5 to-amber-500/0 border border-orange-500/10 p-5 rounded-2xl space-y-3">
                 <h4 className="text-[10px] font-mono font-bold tracking-[0.2em] text-orange-400 uppercase flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-orange-400" /> Gemini AI Call Audit Summary
+                  <Sparkles className="w-4 h-4 text-orange-400" /> AI Call Audit Summary
                 </h4>
                 {selectedCall.summary ? (
                   <div className="text-xs text-zinc-300 leading-relaxed font-mono whitespace-pre-line bg-black/30 border border-white/5 p-4 rounded-xl shadow-inner max-h-60 overflow-y-auto custom-scrollbar">

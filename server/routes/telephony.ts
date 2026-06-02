@@ -23,7 +23,7 @@ router.all("/twilio/incoming-call", (req, res) => {
   res.type("text/xml");
   res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="Polly.Aditi">Connecting you to Gemini Voice Studio. Please speak naturally.</Say>
+  <Say voice="Polly.Aditi">Connecting you to AI Voice Studio. Please speak naturally.</Say>
   <Connect>
     <Stream url="${streamUrl}/api/twilio/live?personaId=${targetId}&amp;callerNumber=${callerNumber}" />
   </Connect>
@@ -45,7 +45,7 @@ function sendVobizStreamXml(req: any, res: any) {
   res.type("text/xml");
   res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Speak>Connecting you to Gemini Voice Studio. Please speak naturally.</Speak>
+  <Speak>Connecting you to AI Voice Studio. Please speak naturally.</Speak>
   <Stream bidirectional="true" keepCallAlive="true" audioTrack="inbound" contentType="audio/x-l16;rate=16000">
     ${streamUrl}/api/sip/live?personaId=${targetId}&amp;callerNumber=${callerNumber}&amp;callId=${callId}&amp;direction=${direction}
   </Stream>

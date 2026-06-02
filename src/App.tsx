@@ -654,11 +654,11 @@ export default function App() {
       <header className="border-b border-white/5 bg-white/[0.01] backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl relative">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-600 flex items-center justify-center text-white font-bold tracking-tight shadow-md shadow-orange-500/10">
-            GC
+            AI
           </div>
           <div>
             <h1 className="text-xs sm:text-sm font-semibold tracking-wide text-zinc-100 flex items-center gap-2 font-mono uppercase">
-              Gemini Voice Studio <span className="text-[8px] font-mono font-bold uppercase py-0.5 px-2 rounded-md bg-orange-500/15 text-orange-400 border border-orange-500/20 shadow-[0_0_10px_rgba(249,115,22,0.1)]">v3.1-Live</span>
+              AI Voice Studio <span className="text-[8px] font-mono font-bold uppercase py-0.5 px-2 rounded-md bg-orange-500/15 text-orange-400 border border-orange-500/20 shadow-[0_0_10px_rgba(249,115,22,0.1)]">v3.1-Live</span>
             </h1>
             <p className="text-[9px] font-mono text-zinc-500 tracking-widest mt-0.5 uppercase">Low-Latency Duplex Customization Center</p>
           </div>
@@ -943,7 +943,7 @@ export default function App() {
                     Connect Any SIP Provider, PBX, or VoIP Number
                   </h3>
                   <p className="text-xs text-zinc-400 font-serif italic max-w-2xl leading-relaxed font-normal">
-                    You can routing standard G.711 μ-law (8kHz) PSTN voice streams into Gemini Voice Studio. Select your integration protocol path below to connect Zadarma, Telnyx, Asterisk, FreePBX, or Twilio directly to your active AI persona.
+                    You can route standard G.711 μ-law (8kHz) PSTN voice streams into AI Voice Studio. Select your integration protocol path below to connect Zadarma, Telnyx, Asterisk, FreePBX, or Twilio directly to your active AI persona.
                   </p>
                 </div>
 
@@ -1075,7 +1075,7 @@ export default function App() {
                       </div>
                       <h4 className="text-xs font-bold tracking-wider uppercase font-mono text-zinc-200">Trunk Naming</h4>
                       <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
-                        In Vobiz portal, set the <strong>Trunk Name</strong> to <code>Gemini Voice Studio Outbound</code> to identify your bidirectional AI telephony bridge.
+                        In Vobiz portal, set the <strong>Trunk Name</strong> to <code>AI Voice Studio Outbound</code> to identify your bidirectional AI telephony bridge.
                       </p>
                     </div>
 
@@ -1148,7 +1148,7 @@ export default function App() {
 
                     <div className="border-t border-white/5 pt-4">
                       <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
-                        💡 <strong>Call Recording & AI Transcription Setting:</strong> The Vobiz screen has checkboxes for *Call Recording* and *AI Transcription*. Feel free to toggle them according to your preferences. Since our Gemini Voice Studio processes natural language stream inputs in real-time, additional provider transcription is not strictly required but acts as an excellent historical audit-log.
+                        💡 <strong>Call Recording & AI Transcription Setting:</strong> The Vobiz screen has checkboxes for *Call Recording* and *AI Transcription*. Feel free to toggle them according to your preferences. Since our AI Voice Studio processes natural language stream inputs in real-time, additional provider transcription is not strictly required but acts as an excellent historical audit-log.
                       </p>
                     </div>
                   </div>
@@ -1203,9 +1203,9 @@ export default function App() {
                       <span className="text-[9px] font-mono text-zinc-500">Copy Dialplan Script</span>
                     </div>
                     <pre className="text-[10px] md:text-sm font-mono text-zinc-300 bg-black/80 p-4 rounded-xl border border-white/5 overflow-x-auto leading-relaxed max-h-48 overflow-y-auto">
-{`; ====== Asterisk Inbound SIP to Gemini Voice Studio Dialplan Rule ======
+{`; ====== Asterisk Inbound SIP to AI Voice Studio Dialplan Rule ======
 [from-sip-trunk]
-exten => _X.,1,NoOp("Incoming Call routed to Gemini Voice Agent: ${selectedPersona.name}")
+exten => _X.,1,NoOp("Incoming Call routed to AI Voice Agent: ${selectedPersona.name}")
  same => n,Answer()
  same => n,Playback(connecting-studio)
  ; Dial standard G.711 mu-law bridge over WebSocket

@@ -54,7 +54,7 @@ export const CallStats: React.FC<CallStatsProps> = ({
           <span className="text-[9px] text-zinc-500 uppercase tracking-widest block">AI Model</span>
           <span className="text-xs font-semibold text-zinc-200 mt-1 block flex items-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5 text-green-400 inline shrink-0" />
-            <span>{callState === "connected" ? "gemini-3.1-flash-live" : "Standby"}</span>
+            <span>{callState === "connected" ? "Realtime-3.1-Live" : "Standby"}</span>
           </span>
         </div>
 

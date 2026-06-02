@@ -10,7 +10,7 @@ interface CallConsoleProps {
   onEndCall: () => void;
   errorMessage?: string;
   activeVoiceDetect: boolean; // True if the user is transmitting mic audio
-  activeSpeakerDetect: boolean; // True if Gemini is outputting speaker audio
+  activeSpeakerDetect: boolean; // True if the agent is outputting speaker audio
   latencyMs?: number;
 }
 
@@ -86,7 +86,7 @@ export const CallConsole: React.FC<CallConsoleProps> = ({
         speakerAmp = 8; // gentle ringing wave
       } else if (callState === "connected") {
         if (activeSpeakerDetect) {
-          speakerAmp = 28; // High wave when Gemini speaks
+          speakerAmp = 28; // High wave when the agent speaks
         } else if (activeVoiceDetect) {
           speakerAmp = 18; // Medium wave when user speaking
         } else {

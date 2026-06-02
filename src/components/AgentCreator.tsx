@@ -27,7 +27,7 @@ const AVATAR_PRESETS = [
   "🤠", "🦁", "🦖", "🕶️", "🧠"
 ];
 
-// Available voices in Gemini Live
+// Available voices in Realtime Live
 const VOICE_PRESETS = [
   { id: "Zephyr", gender: "Male", desc: "Bright, energetic, modern tone with excellent clarity" },
   { id: "Puck", gender: "Female", desc: "Cheerful, warm, empathetic and highly clear voice" },
@@ -389,7 +389,7 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
             {/* Voice select */}
             <div>
               <label className="block text-xs font-mono uppercase tracking-widest text-zinc-400 mb-2">
-                Gemini Synthesizer Acoustics *
+                Realtime Synthesizer Acoustics *
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[220px] overflow-y-auto custom-scrollbar border border-white/5 bg-[#110b07] p-3 rounded-2xl">
                 {VOICE_PRESETS.map((v) => {
