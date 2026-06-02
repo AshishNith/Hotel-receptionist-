@@ -59,6 +59,30 @@ ${transcriptText}
     await call.save();
     
     logToFile(`[Summary Service] Successfully saved summary for call ${callId} to MongoDB!`);
+
+    // 6. Sync to Google Sheets and local CSV if reservation was made during this call
+    try {
+      const bookingToolCalls = call.toolCallsUsed.filter(
+        (tc) => tc.name === "makeRoomReservation" && tc.result?.success && tc.result?.bookingId
+      );
+
+      if (bookingToolCalls.length > 0) {
+        logToFile(`[Summary Service] Found ${bookingToolCalls.length} booking(s) in call ${callId}. Syncing summary and recording to Google Sheet...`);
+        const { updateBookingWithCallSummary } = await import("./hotelService.js");
+
+        const appUrl = process.env.APP_URL || "https://hotel-receptionist-agent.onrender.com";
+        const absoluteRecordingUrl = call.recordingUrl ? `${appUrl.replace(/\/$/, "")}${call.recordingUrl}` : "";
+
+        for (const tc of bookingToolCalls) {
+          const bId = tc.result.bookingId;
+          logToFile(`[Summary Service] Synchronizing summary and recording to Google Sheet for booking: ${bId}`);
+          await updateBookingWithCallSummary(bId, summaryText, absoluteRecordingUrl);
+        }
+      }
+    } catch (syncErr: any) {
+      logToFile(`[Summary Service] Failed to synchronize booking with call summary: ${syncErr?.message || syncErr}`);
+    }
+
     return summaryText;
   } catch (err: any) {
     logToFile(`[Summary Service] Error generating summary for call ${callId}: ${err?.message || err}`);

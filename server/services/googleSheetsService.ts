@@ -24,6 +24,8 @@ const SHEET_HEADERS: Record<string, string[]> = {
     "TotalPrice",
     "Status",
     "Addons",
+    "CallSummary",
+    "CallRecordingUrl",
   ],
   FoodOrders: [
     "OrderID",
@@ -117,6 +119,35 @@ export async function ensureSheetInitialized(sheetName: string): Promise<void> {
           },
         });
         logToFile(`[Google Sheets] Initialized headers for tab: ${sheetName}`);
+      }
+    } else {
+      // Self-healing: Check for missing headers in existing sheet tab!
+      const headers = SHEET_HEADERS[sheetName];
+      if (headers) {
+        const response = await sheets.spreadsheets.values.get({
+          spreadsheetId: GOOGLE_SHEETS_SPREADSHEET_ID,
+          range: `'${sheetName}'!1:1`,
+        });
+        const currentHeaders = response.data.values?.[0] || [];
+        const missingHeaders = headers.filter((h) => !currentHeaders.includes(h));
+
+        if (missingHeaders.length > 0) {
+          logToFile(`[Google Sheets] Existing sheet tab '${sheetName}' is missing columns: ${missingHeaders.join(", ")}. Appending...`);
+          const updatedHeaders = [...currentHeaders];
+          for (const missing of missingHeaders) {
+            updatedHeaders.push(missing);
+          }
+          const lastColLetter = String.fromCharCode(65 + updatedHeaders.length - 1);
+          await sheets.spreadsheets.values.update({
+            spreadsheetId: GOOGLE_SHEETS_SPREADSHEET_ID,
+            range: `'${sheetName}'!A1:${lastColLetter}1`,
+            valueInputOption: "RAW",
+            requestBody: {
+              values: [updatedHeaders],
+            },
+          });
+          logToFile(`[Google Sheets] Updated columns in existing sheet tab: ${sheetName}`);
+        }
       }
     }
 

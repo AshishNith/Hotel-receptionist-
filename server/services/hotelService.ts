@@ -135,7 +135,7 @@ export async function checkRoomAvailability(
       logToFile(`[HotelService] Google Sheets read failed, falling back to CSV: ${err?.message || err}`);
       ensureCSVExists(
         BOOKINGS_CSV,
-        "BookingID,Name,Phone,Email,RoomType,CheckIn,CheckOut,Guests,TotalPrice,Status,Addons"
+        "BookingID,Name,Phone,Email,RoomType,CheckIn,CheckOut,Guests,TotalPrice,Status,Addons,CallSummary,CallRecordingUrl"
       );
       const bookingsContent = fs.readFileSync(BOOKINGS_CSV, "utf8");
       bookingsRows = parseCSV(bookingsContent).slice(1);
@@ -143,7 +143,7 @@ export async function checkRoomAvailability(
   } else {
     ensureCSVExists(
       BOOKINGS_CSV,
-      "BookingID,Name,Phone,Email,RoomType,CheckIn,CheckOut,Guests,TotalPrice,Status,Addons"
+      "BookingID,Name,Phone,Email,RoomType,CheckIn,CheckOut,Guests,TotalPrice,Status,Addons,CallSummary,CallRecordingUrl"
     );
     const bookingsContent = fs.readFileSync(BOOKINGS_CSV, "utf8");
     bookingsRows = parseCSV(bookingsContent).slice(1);
@@ -266,6 +266,8 @@ export async function makeRoomReservation(
     String(totalPrice),
     "Booked",
     addons.join(";"),
+    "", // CallSummary
+    "", // CallRecordingUrl
   ];
 
   const useSheets = await isGoogleSheetsActive();
@@ -276,14 +278,14 @@ export async function makeRoomReservation(
       logToFile(`[HotelService] Google Sheets append failed, falling back to CSV: ${err?.message || err}`);
       ensureCSVExists(
         BOOKINGS_CSV,
-        "BookingID,Name,Phone,Email,RoomType,CheckIn,CheckOut,Guests,TotalPrice,Status,Addons"
+        "BookingID,Name,Phone,Email,RoomType,CheckIn,CheckOut,Guests,TotalPrice,Status,Addons,CallSummary,CallRecordingUrl"
       );
       fs.appendFileSync(BOOKINGS_CSV, toCSVLine(row) + "\n", "utf8");
     }
   } else {
     ensureCSVExists(
       BOOKINGS_CSV,
-      "BookingID,Name,Phone,Email,RoomType,CheckIn,CheckOut,Guests,TotalPrice,Status,Addons"
+      "BookingID,Name,Phone,Email,RoomType,CheckIn,CheckOut,Guests,TotalPrice,Status,Addons,CallSummary,CallRecordingUrl"
     );
     fs.appendFileSync(BOOKINGS_CSV, toCSVLine(row) + "\n", "utf8");
   }
@@ -464,7 +466,7 @@ export async function modifyOrCancelReservation(
   // Fallback to local CSV
   ensureCSVExists(
     BOOKINGS_CSV,
-    "BookingID,Name,Phone,Email,RoomType,CheckIn,CheckOut,Guests,TotalPrice,Status,Addons"
+    "BookingID,Name,Phone,Email,RoomType,CheckIn,CheckOut,Guests,TotalPrice,Status,Addons,CallSummary,CallRecordingUrl"
   );
 
   const bookingsContent = fs.readFileSync(BOOKINGS_CSV, "utf8");
@@ -731,4 +733,60 @@ export async function getHotelFaq(query: string) {
 
   // Fallback return first 3 FAQs if no keywords matched
   return rows.slice(0, 3).map((r) => ({ topic: r[0], question: r[1], answer: r[2] }));
+}
+
+/**
+ * Updates an existing reservation row in Google Sheets and local bookings.csv with Call Summary & Call Recording URL.
+ */
+export async function updateBookingWithCallSummary(
+  bookingId: string,
+  summary: string,
+  recordingUrl: string
+): Promise<void> {
+  const useSheets = await isGoogleSheetsActive();
+  if (useSheets) {
+    try {
+      await updateSheetRow("Bookings", "BookingID", bookingId, {
+        CallSummary: summary,
+        CallRecordingUrl: recordingUrl,
+      });
+    } catch (err: any) {
+      logToFile(`[HotelService] Google Sheets update failed for booking ${bookingId}: ${err?.message || err}`);
+    }
+  }
+
+  // Always update local CSV fallback
+  try {
+    ensureCSVExists(
+      BOOKINGS_CSV,
+      "BookingID,Name,Phone,Email,RoomType,CheckIn,CheckOut,Guests,TotalPrice,Status,Addons,CallSummary,CallRecordingUrl"
+    );
+    const content = fs.readFileSync(BOOKINGS_CSV, "utf8");
+    const rows = parseCSV(content);
+    if (rows.length > 0) {
+      const header = rows[0];
+      const dataRows = rows.slice(1);
+
+      const callSummaryIdx = header.indexOf("CallSummary");
+      const recordingUrlIdx = header.indexOf("CallRecordingUrl");
+
+      let updated = false;
+      for (const row of dataRows) {
+        if (row[0]?.toUpperCase() === bookingId.toUpperCase()) {
+          if (callSummaryIdx !== -1) row[callSummaryIdx] = summary;
+          if (recordingUrlIdx !== -1) row[recordingUrlIdx] = recordingUrl;
+          updated = true;
+          break;
+        }
+      }
+
+      if (updated) {
+        const newContent = [header, ...dataRows].map((r) => toCSVLine(r)).join("\n") + "\n";
+        fs.writeFileSync(BOOKINGS_CSV, newContent, "utf8");
+        logToFile(`[HotelService] Local bookings.csv updated for booking ${bookingId}`);
+      }
+    }
+  } catch (csvErr: any) {
+    logToFile(`[HotelService] Failed to update local CSV for booking ${bookingId}: ${csvErr?.message || csvErr}`);
+  }
 }
