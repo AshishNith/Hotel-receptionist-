@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { GOOGLE_SHEETS_SPREADSHEET_ID } from "../config.js";
-import { logToFile } from "../utils.js";
+import { logToFile, parseDateString } from "../utils.js";
 import {
   getSheetsAuthClient,
   readSheetRows,
@@ -98,12 +98,20 @@ function isOverlapping(
   start2: string,
   end2: string
 ): boolean {
-  const s1 = new Date(start1).getTime();
-  const e1 = new Date(end1).getTime();
-  const s2 = new Date(start2).getTime();
-  const e2 = new Date(end2).getTime();
+  const d1 = parseDateString(start1);
+  const d2 = parseDateString(end1);
+  const d3 = parseDateString(start2);
+  const d4 = parseDateString(end2);
+
+  if (!d1 || !d2 || !d3 || !d4) return false;
+
+  const s1 = d1.getTime();
+  const e1 = d2.getTime();
+  const s2 = d3.getTime();
+  const e2 = d4.getTime();
   return s1 < e2 && e1 > s2;
 }
+
 
 // Load Rooms Config
 export function loadRooms() {
@@ -124,6 +132,14 @@ export async function checkRoomAvailability(
   guestCount: number,
   roomTypePreference?: string
 ) {
+  const start = parseDateString(startDate);
+  const end = parseDateString(endDate);
+
+  if (!start || !end || end.getTime() <= start.getTime()) {
+    logToFile(`[HotelService] Invalid date range check: start=${startDate}, end=${endDate}`);
+    return [];
+  }
+
   let bookingsRows: string[][] = [];
   const useSheets = await isGoogleSheetsActive();
 
@@ -213,6 +229,36 @@ export async function makeRoomReservation(
   const cleanPhone = phone.replace(/^\+/, "").trim();
   const type = roomType.toLowerCase();
 
+  const checkInDate = parseDateString(checkIn);
+  const checkOutDate = parseDateString(checkOut);
+
+  if (!checkInDate || !checkOutDate) {
+    return {
+      success: false,
+      error: "Invalid check-in or check-out date format. Use YYYY-MM-DD.",
+    };
+  }
+
+  // Ensure check-in is not in the past
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const tempCheckIn = new Date(checkInDate);
+  tempCheckIn.setHours(0, 0, 0, 0);
+  if (tempCheckIn.getTime() < today.getTime()) {
+    return {
+      success: false,
+      error: `Check-in date (${checkIn}) cannot be in the past relative to today (${today.toLocaleDateString("en-IN")}).`,
+    };
+  }
+
+  if (checkOutDate.getTime() <= checkInDate.getTime()) {
+    return {
+      success: false,
+      error: "Check-out date must be strictly after the check-in date.",
+    };
+  }
+
   // Verify availability first
   const availability = await checkRoomAvailability(checkIn, checkOut, guests, roomType);
   if (availability.length === 0 || !availability[0].isAvailable) {
@@ -229,12 +275,7 @@ export async function makeRoomReservation(
     return { success: false, error: `Invalid room type '${roomType}'.` };
   }
 
-  const checkInDate = new Date(checkIn);
-  const checkOutDate = new Date(checkOut);
-  const nights = Math.max(
-    1,
-    Math.round((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
-  );
+  const nights = Math.round((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
 
   let basePrice = room.price * nights;
   let addonPrice = 0;
@@ -389,12 +430,15 @@ export async function modifyOrCancelReservation(
           return { success: false, error: `Invalid room type preference '${roomTypeVal}'.` };
         }
 
-        const checkInDate = new Date(checkInVal);
-        const checkOutDate = new Date(checkOutVal);
-        const nights = Math.max(
-          1,
-          Math.round((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
-        );
+        const checkInDate = parseDateString(checkInVal);
+        const checkOutDate = parseDateString(checkOutVal);
+        if (!checkInDate || !checkOutDate) {
+          return { success: false, error: "Invalid check-in or check-out date format." };
+        }
+        if (checkOutDate.getTime() <= checkInDate.getTime()) {
+          return { success: false, error: "Check-out date must be after check-in date." };
+        }
+        const nights = Math.round((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
 
         const bookedCounts: Record<string, number> = {
           deluxe: 0,
@@ -531,12 +575,15 @@ export async function modifyOrCancelReservation(
       return { success: false, error: `Invalid room type preference '${roomTypeVal}'.` };
     }
 
-    const checkInDate = new Date(checkInVal);
-    const checkOutDate = new Date(checkOutVal);
-    const nights = Math.max(
-      1,
-      Math.round((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
-    );
+    const checkInDate = parseDateString(checkInVal);
+    const checkOutDate = parseDateString(checkOutVal);
+    if (!checkInDate || !checkOutDate) {
+      return { success: false, error: "Invalid check-in or check-out date format." };
+    }
+    if (checkOutDate.getTime() <= checkInDate.getTime()) {
+      return { success: false, error: "Check-out date must be after check-in date." };
+    }
+    const nights = Math.round((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
 
     const bookedCounts: Record<string, number> = {
       deluxe: 0,

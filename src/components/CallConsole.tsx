@@ -135,10 +135,10 @@ export const CallConsole: React.FC<CallConsoleProps> = ({
   }, [callState, persona, activeVoiceDetect, activeSpeakerDetect]);
 
   return (
-    <div className="bg-white/[0.02] backdrop-blur-2xl border border-white/5 rounded-3xl p-6 shadow-2xl shadow-black/80 flex flex-col justify-between h-full relative overflow-hidden">
+    <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-full relative overflow-hidden">
       
       {/* Visual background atmospheric overlays */}
-      <div className={`absolute top-0 right-0 w-48 h-48 rounded-full blur-[100px] pointer-events-none transition-all duration-700 bg-orange-500/10`}></div>
+      <div className={`absolute top-0 right-0 w-48 h-48 rounded-full blur-[100px] pointer-events-none transition-all duration-700 bg-blue-500/5`}></div>
 
       {/* Top Banner Status */}
       <div className="flex items-center justify-between z-10">
@@ -161,8 +161,8 @@ export const CallConsole: React.FC<CallConsoleProps> = ({
         </div>
         
         {callState === "connected" && (
-          <div className="flex items-center gap-1.5 text-zinc-400 font-mono text-[9px] bg-[#0a0502]/80 px-2 py-0.5 rounded-md border border-white/5">
-            <Wifi className="w-3 h-3 text-orange-400" />
+          <div className="flex items-center gap-1.5 text-zinc-500 font-mono text-[9px] bg-zinc-50 px-2 py-0.5 rounded-md border border-zinc-200">
+            <Wifi className="w-3 h-3 text-blue-500" />
             <span>LATENCY: {latencyMs ? `${latencyMs}ms` : "Measuring..."}</span>
           </div>
         )}
@@ -181,12 +181,12 @@ export const CallConsole: React.FC<CallConsoleProps> = ({
           }`}></div>
           
           {/* Main Visualizer Globe */}
-          <div className={`w-[210px] h-[210px] rounded-full bg-gradient-to-br from-orange-500 via-orange-600 to-amber-950 flex items-center justify-center transition-all duration-500 relative overflow-hidden shadow-[0_0_60px_rgba(249,115,22,0.2)] ${
+          <div className={`w-[210px] h-[210px] rounded-full bg-gradient-to-br from-blue-500 via-blue-600 to-zinc-200 flex items-center justify-center transition-all duration-500 relative overflow-hidden shadow-sm ${
             callState === "connected" && activeSpeakerDetect 
-              ? "shadow-[0_0_80px_rgba(249,115,22,0.45)] ring-2 ring-orange-400/20 scale-[102%]" 
+              ? "shadow-md ring-2 ring-blue-400/20 scale-[102%]" 
               : ""
           }`}>
-            <div className="w-[185px] h-[185px] rounded-full bg-[#0a0502] flex flex-col items-center justify-center overflow-hidden relative">
+            <div className="w-[185px] h-[185px] rounded-full bg-white flex flex-col items-center justify-center overflow-hidden relative">
               
               {/* Voice Canvas fitted internally inside coordinates */}
               <div className="absolute inset-x-0 bottom-6 top-8 opacity-70">
@@ -213,8 +213,8 @@ export const CallConsole: React.FC<CallConsoleProps> = ({
 
         {/* Name and Designation */}
         <div className="text-center mt-8">
-          <h1 className="text-3xl font-light tracking-tight text-white mb-1">{persona.name}</h1>
-          <p className="text-orange-400/80 font-mono tracking-widest uppercase text-[10px]">
+          <h1 className="text-3xl font-light tracking-tight text-zinc-900 mb-1">{persona.name}</h1>
+          <p className="text-zinc-500 font-mono tracking-widest uppercase text-[10px]">
             {persona.role} {persona.phoneNumber ? `• ${persona.phoneNumber}` : ""}
           </p>
         </div>
@@ -228,28 +228,28 @@ export const CallConsole: React.FC<CallConsoleProps> = ({
           )}
           {callState === "connected" && (
             <div className="flex flex-col items-center">
-              <span className="text-[9px] uppercase font-mono text-zinc-500 tracking-widest">
+              <span className="text-[9px] uppercase font-mono text-zinc-500 tracking-widest font-semibold">
                 Real-time Duplex Open
               </span>
-              <p className="text-sm font-serif italic text-zinc-300 mt-1">
+              <p className="text-sm font-serif italic text-zinc-800 mt-1">
                 {activeSpeakerDetect ? "Agent is speaking..." : activeVoiceDetect ? "Speak now, I'm listening..." : "Awaiting your voice input..."}
               </p>
             </div>
           )}
           {callState === "ended" && (
-            <p className="text-xs text-zinc-500 font-serif italic">
+            <p className="text-xs text-zinc-550 font-serif italic">
               Line hung up. Redial above to connect.
             </p>
           )}
           {callState === "error" && (
-            <div className="bg-red-950/20 border border-red-500/20 px-3 py-1.5 rounded-lg max-w-full">
-              <p className="text-[11px] text-red-400 font-mono leading-tight">
+            <div className="bg-red-550/10 border border-red-200 px-3 py-1.5 rounded-lg max-w-full">
+              <p className="text-[11px] text-red-650 font-mono leading-tight">
                 {errorMessage || "Handshake failed"}
               </p>
             </div>
           )}
           {callState === "idle" && (
-            <p className="text-sm text-zinc-400 max-w-xs font-serif italic leading-relaxed text-center">
+            <p className="text-sm text-zinc-500 max-w-xs font-serif italic leading-relaxed text-center">
               Awaiting session. Select one from the directory to start a secure voice call.
             </p>
           )}
@@ -257,7 +257,7 @@ export const CallConsole: React.FC<CallConsoleProps> = ({
       </div>
 
       {/* VoIP Hardware Controls (Immersive UI buttons layout) */}
-      <div className="flex items-center justify-center gap-10 z-10 border-t border-white/5 pt-5">
+      <div className="flex items-center justify-center gap-10 z-10 border-t border-zinc-200 pt-5">
         {/* Mute Button */}
         <button
           onClick={onToggleMute}
@@ -268,7 +268,7 @@ export const CallConsole: React.FC<CallConsoleProps> = ({
           <div className={`w-14 h-14 rounded-full border flex items-center justify-center transition-all duration-300 ${
             isMuted
               ? "bg-red-500/20 border-red-500/40 text-red-400"
-              : "bg-white/5 border-white/10 text-zinc-400 group-hover:bg-white/10 group-hover:border-white/20 group-hover:text-zinc-200"
+              : "bg-zinc-50 border-zinc-200 text-zinc-500 group-hover:bg-zinc-100 group-hover:border-zinc-300 group-hover:text-zinc-900"
           }`}>
             {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
           </div>

@@ -39,7 +39,7 @@ router.post("/", async (req, res) => {
     ambientSound: agent.ambientSound || "none",
     silenceTimeout: agent.silenceTimeout || 30,
     temperature: typeof agent.temperature === "number" ? agent.temperature : 0.7,
-    isDefault: false,
+    isDefault: agent.id.trim() === "diya" || !!agent.isDefault,
   };
 
   try {

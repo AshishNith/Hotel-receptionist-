@@ -224,7 +224,7 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
     const calculatedBorder = BORDER_THEME_MAP[accentColor] || "border-cyan-500/30";
 
     const savedAgent: Persona = {
-      id: editingPersona?.id || "diya",
+      id: editingPersona?.id || `persona_${Date.now()}`,
       name: name.trim(),
       role: role.trim(),
       description: description.trim() || `A customized conversational AI agent configured with unique dialogue profiles.`,
@@ -246,21 +246,21 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
   };
 
   return (
-    <div className="bg-white/[0.02] backdrop-blur-2xl border border-white/5 rounded-3xl p-6 lg:p-8 shadow-2xl flex flex-col h-full overflow-y-auto custom-scrollbar max-w-4xl mx-auto">
+    <div className="flex flex-col w-full text-zinc-800 p-2">
       
       {/* Header Panel */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between pb-6 border-b border-white/10 mb-6 gap-4">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between pb-6 border-b border-zinc-200 mb-6 gap-4">
         <div className="flex items-center gap-3">
           <button
             onClick={onCancel}
-            className="p-2.5 rounded-xl border border-white/10 bg-white/[0.01] hover:bg-white/10 text-zinc-400 hover:text-white transition duration-200 cursor-pointer"
+            className="p-2.5 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-500 hover:text-zinc-900 transition duration-200 cursor-pointer"
             title="Go Back"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h2 className="text-lg font-mono uppercase tracking-[0.2em] text-zinc-200 flex items-center gap-2">
-              <Wrench className="w-5 h-5 text-orange-400" />
+            <h2 className="text-lg font-mono uppercase tracking-[0.2em] text-zinc-900 flex items-center gap-2">
+              <Wrench className="w-5 h-5 text-zinc-900" />
               Configure Agent Profile
             </h2>
             <p className="text-xs text-zinc-500 font-serif italic mt-0.5">
@@ -279,7 +279,7 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
             
             {/* Name input */}
             <div>
-              <label className="block text-xs font-mono uppercase tracking-widest text-zinc-400 mb-2">
+              <label className="block text-xs font-mono uppercase tracking-widest text-zinc-500 mb-2">
                 Agent Signature Name *
               </label>
               <input
@@ -288,13 +288,13 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Mentor Jordan"
-                className="w-full bg-[#110b07] border border-white/10 rounded-2xl p-3.5 text-sm text-white focus:outline-none focus:border-orange-500/50 transition duration-300 font-sans shadow-inner shadow-black/40"
+                className="w-full bg-white border border-zinc-200 rounded-2xl p-3.5 text-sm text-zinc-900 focus:outline-none focus:border-zinc-950 transition duration-300 font-sans"
               />
             </div>
 
             {/* Role input */}
             <div>
-              <label className="block text-xs font-mono uppercase tracking-widest text-zinc-400 mb-2">
+              <label className="block text-xs font-mono uppercase tracking-widest text-zinc-500 mb-2">
                 Role / Sub-line *
               </label>
               <input
@@ -303,13 +303,13 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 placeholder="e.g. AI Career Coach or Spanish Teacher"
-                className="w-full bg-[#110b07] border border-white/10 rounded-2xl p-3.5 text-sm text-white focus:outline-none focus:border-orange-500/50 transition duration-300 font-sans shadow-inner shadow-black/40"
+                className="w-full bg-white border border-zinc-200 rounded-2xl p-3.5 text-sm text-zinc-900 focus:outline-none focus:border-zinc-950 transition duration-300 font-sans"
               />
             </div>
 
             {/* Phone Number simulated */}
             <div>
-              <label className="block text-xs font-mono uppercase tracking-widest text-zinc-400 mb-2">
+              <label className="block text-xs font-mono uppercase tracking-widest text-zinc-500 mb-2">
                 Simulated Calling Route No.
               </label>
               <div className="relative">
@@ -319,17 +319,17 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   placeholder="+1 (555) 012-3456"
-                  className="w-full bg-[#110b07] border border-white/10 rounded-2xl pl-10 pr-4 p-3.5 text-sm font-mono text-zinc-100 focus:outline-none focus:border-orange-500/50 transition duration-300"
+                  className="w-full bg-white border border-zinc-200 rounded-2xl pl-10 pr-4 p-3.5 text-sm font-mono text-zinc-900 focus:outline-none focus:border-zinc-950 transition duration-300"
                 />
               </div>
             </div>
 
             {/* Accent Theme Select */}
             <div>
-              <label className="block text-xs font-mono uppercase tracking-widest text-zinc-400 mb-3">
+              <label className="block text-xs font-mono uppercase tracking-widest text-zinc-500 mb-3">
                 Card Interface Highlight Palette
               </label>
-              <div className="flex items-center gap-3 bg-[#110b07] p-3 rounded-2xl border border-white/5">
+              <div className="flex items-center gap-3 bg-zinc-50 p-3 rounded-2xl border border-zinc-200">
                 {ACCENT_COLORS.map((color) => {
                   const isSelected = accentColor === color.id;
                   return (
@@ -339,7 +339,7 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
                       onClick={() => setAccentColor(color.id)}
                       className={`w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer transition-all duration-300 ${color.class} ${
                         isSelected 
-                          ? "ring-2 ring-white scale-110 shadow-lg shadow-black/50" 
+                          ? "ring-2 ring-zinc-950 scale-110 shadow-sm" 
                           : "opacity-45 hover:opacity-85"
                       }`}
                       title={color.label}
@@ -355,10 +355,10 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
 
             {/* Avatar Preset Grid */}
             <div>
-              <label className="block text-xs font-mono uppercase tracking-widest text-zinc-400 mb-3">
+              <label className="block text-xs font-mono uppercase tracking-widest text-zinc-500 mb-3">
                 Agent Interface Avatar
               </label>
-              <div className="bg-[#110b07] p-4 rounded-2xl border border-white/5 max-h-[160px] overflow-y-auto custom-scrollbar">
+              <div className="bg-zinc-50 p-4 rounded-2xl border border-zinc-200 max-h-[160px] overflow-y-auto custom-scrollbar">
                 <div className="grid grid-cols-6 gap-2">
                   {AVATAR_PRESETS.map((av) => {
                     const isSelected = avatar === av;
@@ -369,8 +369,8 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
                         onClick={() => setAvatar(av)}
                         className={`h-11 rounded-xl text-xl flex items-center justify-center transition-all cursor-pointer ${
                           isSelected 
-                            ? "bg-white/15 border border-white/20 scale-105" 
-                            : "bg-white/[0.01] hover:bg-white/5 border border-transparent"
+                            ? "bg-white border border-zinc-300 scale-105" 
+                            : "bg-white/50 hover:bg-white border border-zinc-200 text-zinc-700"
                         }`}
                       >
                         {av}
@@ -388,10 +388,10 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
             
             {/* Voice select */}
             <div>
-              <label className="block text-xs font-mono uppercase tracking-widest text-zinc-400 mb-2">
+              <label className="block text-xs font-mono uppercase tracking-widest text-zinc-500 mb-2">
                 Realtime Synthesizer Acoustics *
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[220px] overflow-y-auto custom-scrollbar border border-white/5 bg-[#110b07] p-3 rounded-2xl">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[220px] overflow-y-auto custom-scrollbar border border-zinc-200 bg-zinc-50 p-3 rounded-2xl">
                 {VOICE_PRESETS.map((v) => {
                   const isSelected = voice === v.id;
                   return (
@@ -401,13 +401,13 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
                       onClick={() => setVoice(v.id as any)}
                       className={`p-3 rounded-xl border text-left transition duration-200 cursor-pointer flex flex-col justify-between h-20 ${
                         isSelected
-                          ? "bg-white/10 border-orange-500/50"
-                          : "bg-white/[0.01] border-white/5 hover:bg-white/[0.03]"
+                          ? "bg-zinc-100 border-zinc-400"
+                          : "bg-white border-zinc-200 hover:bg-zinc-50"
                       }`}
                     >
                       <div className="flex items-center justify-between w-full">
-                        <span className="text-xs font-bold font-mono text-zinc-200 truncate">{v.id}</span>
-                        <span className="text-[9px] font-mono uppercase bg-white/5 px-1.5 py-0.5 rounded text-zinc-500">
+                        <span className="text-xs font-bold font-mono text-zinc-800 truncate">{v.id}</span>
+                        <span className="text-[9px] font-mono uppercase bg-zinc-200 px-1.5 py-0.5 rounded text-zinc-650">
                           {v.gender}
                         </span>
                       </div>
@@ -422,7 +422,7 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
 
             {/* Description (Card Bio) */}
             <div>
-              <label className="block text-xs font-mono uppercase tracking-widest text-zinc-400 mb-2">
+              <label className="block text-xs font-mono uppercase tracking-widest text-zinc-500 mb-2">
                 Brief Directory Card Biography
               </label>
               <textarea
@@ -430,13 +430,13 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="A gentle prompt trainer who coaches healthy mental clarity."
                 rows={2}
-                className="w-full bg-[#110b07] border border-white/10 rounded-2xl p-3.5 text-sm text-white focus:outline-none focus:border-orange-500/50 transition duration-300 font-sans shadow-inner shadow-black/40 resize-none"
+                className="w-full bg-white border border-zinc-200 rounded-2xl p-3.5 text-sm text-zinc-900 focus:outline-none focus:border-zinc-950 transition duration-300 font-sans resize-none"
               />
             </div>
 
             {/* Initial Greeting */}
             <div>
-              <label className="block text-xs font-mono uppercase tracking-widest text-zinc-400 mb-2">
+              <label className="block text-xs font-mono uppercase tracking-widest text-zinc-500 mb-2">
                 Opening Greeting Trigger Line
               </label>
               <input
@@ -444,20 +444,20 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
                 value={initialGreeting}
                 onChange={(e) => setInitialGreeting(e.target.value)}
                 placeholder="नमस्ते! मैं आपका डिजिटल सहायक हूँ।"
-                className="w-full bg-[#110b07] border border-white/10 rounded-2xl p-3.5 text-sm text-white focus:outline-none focus:border-orange-500/50 transition duration-300 font-sans"
+                className="w-full bg-white border border-zinc-200 rounded-2xl p-3.5 text-sm text-zinc-900 focus:outline-none focus:border-zinc-950 transition duration-300 font-sans"
               />
               <p className="text-[9px] font-mono text-zinc-500 uppercase mt-1">Used to hint the caller how to start conversation immediately</p>
             </div>
 
             {/* Knowledge Base Link */}
             <div>
-              <label className="block text-xs font-mono uppercase tracking-widest text-zinc-400 mb-2">
+              <label className="block text-xs font-mono uppercase tracking-widest text-zinc-500 mb-2">
                 Link Knowledge Base
               </label>
               <select
                 value={knowledgeBaseId}
                 onChange={(e) => setKnowledgeBaseId(e.target.value)}
-                className="w-full bg-[#110b07] border border-white/10 rounded-2xl p-3.5 text-sm text-zinc-300 focus:outline-none focus:border-orange-500/50 transition"
+                className="w-full bg-white border border-zinc-200 rounded-2xl p-3.5 text-sm text-zinc-800 focus:outline-none focus:border-zinc-950 transition"
               >
                 <option value="">None (No custom documents linked)</option>
                 {knowledgeBases.map((kb) => (
@@ -470,13 +470,13 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
 
             {/* Ambient Sound Dropdown */}
             <div>
-              <label className="block text-xs font-mono uppercase tracking-widest text-zinc-400 mb-2">
+              <label className="block text-xs font-mono uppercase tracking-widest text-zinc-500 mb-2">
                 Ambient Background Noise
               </label>
               <select
                 value={ambientSound}
                 onChange={(e) => setAmbientSound(e.target.value as any)}
-                className="w-full bg-[#110b07] border border-white/10 rounded-2xl p-3.5 text-sm text-zinc-300 focus:outline-none focus:border-orange-500/50 transition"
+                className="w-full bg-white border border-zinc-200 rounded-2xl p-3.5 text-sm text-zinc-800 focus:outline-none focus:border-zinc-950 transition"
               >
                 <option value="none">None (Dead Silence)</option>
                 <option value="office">Office AC Hum</option>
@@ -488,8 +488,8 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
             {/* Temperature Slider */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-mono uppercase tracking-widest text-zinc-400">
-                  Model Temperature: <span className="text-orange-400 font-bold">{temperature.toFixed(2)}</span>
+                <label className="text-xs font-mono uppercase tracking-widest text-zinc-500">
+                  Model Temperature: <span className="text-zinc-900 font-bold">{temperature.toFixed(2)}</span>
                 </label>
                 <span className="text-[10px] text-zinc-500">
                   {temperature <= 0.3 ? "Deterministic/Factual" : temperature <= 0.7 ? "Balanced" : "Creative/Playful"}
@@ -502,15 +502,15 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
                 step="0.05"
                 value={temperature}
                 onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                className="w-full accent-orange-500 bg-white/15 h-1.5 rounded-lg cursor-pointer"
+                className="w-full accent-zinc-950 bg-zinc-200 h-1.5 rounded-lg cursor-pointer"
               />
             </div>
 
             {/* Silence Timeout Slider */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-mono uppercase tracking-widest text-zinc-400">
-                  Silence Timeout: <span className="text-orange-400 font-bold">{silenceTimeout}s</span>
+                <label className="text-xs font-mono uppercase tracking-widest text-zinc-500">
+                  Silence Timeout: <span className="text-zinc-900 font-bold">{silenceTimeout}s</span>
                 </label>
               </div>
               <input
@@ -520,7 +520,7 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
                 step="5"
                 value={silenceTimeout}
                 onChange={(e) => setSilenceTimeout(parseInt(e.target.value))}
-                className="w-full accent-orange-500 bg-white/15 h-1.5 rounded-lg cursor-pointer"
+                className="w-full accent-zinc-950 bg-zinc-200 h-1.5 rounded-lg cursor-pointer"
               />
             </div>
 
@@ -529,8 +529,8 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
         </div>
 
         {/* System Instructions Prompt Box (Spans full width) */}
-        <div className="mt-8 border-t border-white/5 pt-6">
-          <label className="block text-xs font-mono uppercase tracking-widest text-zinc-400 mb-2">
+        <div className="mt-8 border-t border-zinc-200 pt-6">
+          <label className="block text-xs font-mono uppercase tracking-widest text-zinc-500 mb-2">
             System Backstory / Prompt Instructions (Core Brain) *
           </label>
           <textarea
@@ -539,7 +539,7 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
             onChange={(e) => setSystemInstruction(e.target.value)}
             placeholder="Write the core instructions for the model behavior. Example: You are a bilingual teacher..."
             rows={5}
-            className="w-full bg-[#110b07] border border-white/10 rounded-2xl p-4 text-xs font-mono leading-relaxed text-zinc-200 focus:outline-none focus:border-orange-500/50 transition duration-300 shadow-inner shadow-black/50"
+            className="w-full bg-white border border-zinc-200 rounded-2xl p-4 text-xs font-mono leading-relaxed text-zinc-800 focus:outline-none focus:border-zinc-950 transition duration-300"
           />
           <p className="text-[10px] text-zinc-500 font-serif italic mt-1.5">
             This represents the core system prompt payload. This exact text defines the agent's tone, constraints, and operational mission when establishing the VoIP stream.
@@ -547,18 +547,18 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
         </div>
 
         {/* Controls block */}
-        <div className="flex items-center justify-end gap-4 border-t border-white/10 pt-6">
+        <div className="flex items-center justify-end gap-4 border-t border-zinc-200 pt-6">
           <button
             type="button"
             onClick={handleReset}
-            className="flex items-center gap-2 px-6 py-3 rounded-2xl border border-white/15 hover:bg-white/5 text-zinc-400 hover:text-white transition duration-200 cursor-pointer font-mono text-xs uppercase tracking-widest"
+            className="flex items-center gap-2 px-6 py-3 rounded-2xl border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 hover:text-zinc-900 transition duration-200 cursor-pointer font-mono text-xs uppercase tracking-widest"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             Reset Form
           </button>
           <button
             type="submit"
-            className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-400 hover:to-amber-500 text-white font-semibold transition duration-200 shadow-lg shadow-orange-500/10 active:scale-95 cursor-pointer font-mono text-xs uppercase tracking-widest"
+            className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-zinc-950 hover:bg-zinc-900 text-white font-semibold transition duration-200 shadow-sm cursor-pointer font-mono text-xs uppercase tracking-widest"
           >
             <Save className="w-4 h-4" />
             Save Agent

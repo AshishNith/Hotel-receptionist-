@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getPublicAppUrl, logToFile } from "../utils.js";
+import { getPublicAppUrl, logToFile, parseDateString } from "../utils.js";
 import {
   initiateOutboundCall,
   getCallState,
@@ -168,7 +168,17 @@ router.post("/bookings/trigger-confirmations", async (req, res) => {
     let rows: string[][] = [];
 
     if (useSheets) {
-      rows = await readSheetRows("Bookings");
+      try {
+        rows = await readSheetRows("Bookings");
+      } catch (err: any) {
+        logToFile(`[Confirmation Scanner] Google Sheets read failed, falling back to CSV: ${err?.message || err}`);
+        ensureCSVExists(
+          BOOKINGS_CSV,
+          "BookingID,Name,Phone,Email,RoomType,CheckIn,CheckOut,Guests,TotalPrice,Status,Addons,CallSummary,CallRecordingUrl"
+        );
+        const content = fs.readFileSync(BOOKINGS_CSV, "utf8");
+        rows = parseCSV(content);
+      }
     } else {
       ensureCSVExists(
         BOOKINGS_CSV,
@@ -191,7 +201,8 @@ router.post("/bookings/trigger-confirmations", async (req, res) => {
     const checkInIdx = header.indexOf("CheckIn");
     const statusIdx = header.indexOf("Status");
 
-    const now = Date.now();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const triggeredBookings: string[] = [];
 
     for (const row of dataRows) {
@@ -203,15 +214,18 @@ router.post("/bookings/trigger-confirmations", async (req, res) => {
 
       if (status !== "Booked") continue;
 
-      const checkInDate = new Date(checkInStr);
-      if (isNaN(checkInDate.getTime())) continue;
+      const checkInDate = parseDateString(checkInStr);
+      if (!checkInDate) continue;
 
-      const diffMs = checkInDate.getTime() - now;
-      const hoursLeft = diffMs / (1000 * 60 * 60);
+      const checkInLocalMidnight = new Date(checkInDate);
+      checkInLocalMidnight.setHours(0, 0, 0, 0);
 
-      // Trigger calls for any booking arriving tomorrow (0 to 36 hours check-in range)
-      if (hoursLeft > 0 && hoursLeft <= 36) {
-        logToFile(`[Confirmation Scanner] Booking ${bookingId} qualifies (Name: ${name}, Phone: ${phone}, Hours Left: ${hoursLeft.toFixed(1)}h)`);
+      const diffMs = checkInLocalMidnight.getTime() - today.getTime();
+      const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+      // Trigger calls for any booking arriving today or tomorrow local time
+      if (diffDays === 0 || diffDays === 1) {
+        logToFile(`[Confirmation Scanner] Booking ${bookingId} qualifies (Name: ${name}, Phone: ${phone}, Diff Days: ${diffDays})`);
 
         let formattedNumber = phone.trim();
         if (!formattedNumber.startsWith("+")) {

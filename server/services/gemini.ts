@@ -24,22 +24,31 @@ export async function getCompiledSystemInstruction(
   baseInstruction: string,
   knowledgeBaseId?: string
 ): Promise<string> {
-  if (!knowledgeBaseId) return baseInstruction;
+  const localTime = new Date();
+  const formatter = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Kolkata' });
+  const formattedDate = formatter.format(localTime); // YYYY-MM-DD
+  const dayOfWeek = localTime.toLocaleDateString("en-IN", { weekday: "long", timeZone: "Asia/Kolkata" });
+  const timeStr = localTime.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata" });
+
+  const dateInstruction = `\n\n[System Time Info]\nToday's Date: ${formattedDate}\nDay of the week: ${dayOfWeek}\nCurrent Time: ${timeStr} (IST)\n\nUse this information when checking room availability or creating/modifying reservations.`;
+  const instructionWithTime = baseInstruction + dateInstruction;
+
+  if (!knowledgeBaseId) return instructionWithTime;
 
   try {
     const kb = await KnowledgeBaseModel.findOne({ id: knowledgeBaseId });
     if (!kb || !kb.documents || kb.documents.length === 0) {
-      return baseInstruction;
+      return instructionWithTime;
     }
 
     const docSection = kb.documents
       .map((d) => `### ${d.title}\n${d.content}`)
       .join("\n\n---\n\n");
 
-    return `${baseInstruction}\n\n--- KNOWLEDGE BASE: ${kb.name} ---\nThe following reference documents contain important factual information you should use when answering questions:\n\n${docSection}`;
+    return `${instructionWithTime}\n\n--- KNOWLEDGE BASE: ${kb.name} ---\nThe following reference documents contain important factual information you should use when answering questions:\n\n${docSection}`;
   } catch (err) {
     console.error("[Gemini] Error loading knowledge base:", err);
-    return baseInstruction;
+    return instructionWithTime;
   }
 }
 

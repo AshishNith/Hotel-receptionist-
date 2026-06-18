@@ -13,45 +13,47 @@ export const TranscriptList: React.FC<TranscriptListProps> = ({
   persona,
   callState,
 }) => {
-  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // Auto-scroll to the bottom of transcripts on list update
+  // Auto-scroll the container to the bottom on messages update
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages.length > 0 && containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    }
   }, [messages]);
 
   return (
-    <div className="flex flex-col h-full bg-white/[0.02] backdrop-blur-2xl border border-white/5 rounded-3xl overflow-hidden shadow-2xl shadow-black/80">
+    <div className="flex flex-col h-full bg-white border border-zinc-200 rounded-3xl overflow-hidden shadow-sm">
       
       {/* Scrollable Transcript Header */}
-      <div className="p-6 border-b border-white/10 bg-white/[0.01] flex items-center justify-between">
+      <div className="p-6 border-b border-zinc-200 bg-zinc-50 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <MessageSquareCode className="w-4 h-4 text-orange-400" />
+          <MessageSquareCode className="w-4 h-4 text-zinc-500" />
           <div>
-            <h2 className="text-xs font-mono uppercase tracking-[0.2em] text-zinc-400">
+            <h2 className="text-xs font-mono uppercase tracking-[0.2em] text-zinc-500">
               Live Speech Transcript
             </h2>
             <p className="text-xs text-zinc-500 font-serif italic mt-0.5">Real-time conversational log</p>
           </div>
         </div>
-        <span className="text-[9px] uppercase font-mono bg-[#0a0502]/80 border border-white/5 text-zinc-500 px-2 py-0.5 rounded-md leading-none tracking-widest">
+        <span className="text-[9px] uppercase font-mono bg-zinc-100 border border-zinc-200 text-zinc-650 px-2 py-0.5 rounded-md leading-none tracking-widest">
           UTILITY v3.1
         </span>
       </div>
 
       {/* Message Stream */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar bg-transparent">
+      <div ref={containerRef} className="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar bg-transparent">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center p-6 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-4 shadow-lg">
+            <div className="w-12 h-12 rounded-2xl bg-zinc-100 border border-zinc-200 flex items-center justify-center mb-4 shadow-sm">
               <MessageSquareOff className="w-5 h-5 text-zinc-650" />
             </div>
-            <h3 className="text-xs font-mono uppercase tracking-widest text-zinc-500">No transcripts yet</h3>
+            <h3 className="text-xs font-mono uppercase tracking-widest text-zinc-500 font-semibold">No transcripts yet</h3>
             <p className="text-xs text-zinc-550 mt-2 max-w-[200px] leading-relaxed font-serif italic">
               When the dial connects, spoken dialogues will be transcribed and open here in real time.
             </p>
             {callState === "connected" && (
-              <div className="mt-5 px-4 py-2 rounded-xl border border-orange-500/10 bg-orange-500/5 text-orange-400 text-xs animate-pulse font-mono uppercase tracking-wider">
+              <div className="mt-5 px-4 py-2 rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-800 animate-pulse font-mono uppercase tracking-wider">
                 Ask: "{persona.initialGreeting.split(".").shift()}"
               </div>
             )}
@@ -81,10 +83,10 @@ export const TranscriptList: React.FC<TranscriptListProps> = ({
 
                 {/* Speech Bubble body */}
                 <div
-                  className={`max-w-[90%] rounded-2xl px-4 py-3 leading-relaxed shadow-lg ${
+                  className={`max-w-[90%] rounded-2xl px-4 py-3 leading-relaxed shadow-sm border ${
                     isAgent
-                      ? `bg-white/5 backdrop-blur-2xl border border-white/10 text-zinc-200 rounded-tl-none font-serif text-sm italic`
-                      : "bg-orange-500/10 border border-orange-500/20 text-zinc-200 rounded-tr-none text-xs font-serif"
+                      ? `bg-zinc-50 border-zinc-200 text-zinc-800 rounded-tl-none font-serif text-sm italic`
+                      : "bg-blue-50/50 border-blue-100 text-zinc-800 rounded-tr-none text-sm font-serif"
                   }`}
                 >
                   <p className="whitespace-pre-wrap">
@@ -95,16 +97,15 @@ export const TranscriptList: React.FC<TranscriptListProps> = ({
             );
           })
         )}
-        <div ref={bottomRef} />
       </div>
 
       {/* Suggested Openings / Quick Prompts Footer */}
       {callState === "connected" && (
-        <div className="p-5 border-t border-white/10 bg-white/[0.01]">
+        <div className="p-5 border-t border-zinc-200 bg-zinc-50">
           <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-[0.2em] block mb-2">
             Suggested Conversation Opening:
           </span>
-          <div className="bg-[#0a0502]/60 rounded-2xl p-4 border border-white/5 text-xs text-zinc-400 font-serif italic leading-relaxed">
+          <div className="bg-white rounded-2xl p-4 border border-zinc-200 text-xs text-zinc-600 font-serif italic leading-relaxed">
             "{persona.initialGreeting}"
           </div>
         </div>

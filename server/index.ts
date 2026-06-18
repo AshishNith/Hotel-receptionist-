@@ -16,6 +16,7 @@ import authRoutes from "./routes/auth.js";
 import telephonyRoutes from "./routes/telephony.js";
 import analyticsRoutes from "./routes/analytics.js";
 import healthRoutes from "./routes/health.js";
+import toolsRoutes from "./routes/tools.js";
 
 // WebSocket handlers
 import { handleBrowserWebSocket } from "./handlers/browserWs.js";
@@ -35,6 +36,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api", telephonyRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/health", healthRoutes);
+app.use("/api/tools", toolsRoutes);
 
 // ─── WebSocket Servers ──────────────────────────────────────────
 const wssBrowser = new WebSocketServer({ noServer: true });
@@ -68,19 +70,14 @@ wssTelephony.on("connection", (ws: WebSocket, request) => {
 
 // ─── Seed Default Personas ──────────────────────────────────────
 async function seedDefaultPersonas(): Promise<void> {
-  const count = await PersonaModel.countDocuments({});
-  if (count > 1) {
-    console.log(`[Seed] Multiple personas found (${count}). Clearing to enforce single-agent.`);
-    await PersonaModel.deleteMany({});
-  }
-
   for (const persona of DEFAULT_PERSONAS) {
-    await PersonaModel.findOneAndUpdate(
-      { id: persona.id },
-      persona,
-      { upsert: true, returnDocument: "after" }
-    );
-    console.log(`[Seed] Synchronized default persona: ${persona.name}`);
+    const existing = await PersonaModel.findOne({ id: persona.id });
+    if (!existing) {
+      await PersonaModel.create(persona);
+      console.log(`[Seed] Created default persona: ${persona.name}`);
+    } else {
+      console.log(`[Seed] Default persona already exists: ${persona.name}. Skipping seed overwrite.`);
+    }
   }
   const total = await PersonaModel.countDocuments({});
   console.log(`[Seed] Total personas in database: ${total}`);

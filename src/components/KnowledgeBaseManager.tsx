@@ -236,21 +236,21 @@ export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({ onBa
   };
 
   return (
-    <div className="bg-white/[0.02] backdrop-blur-2xl border border-white/5 rounded-3xl p-6 lg:p-8 shadow-2xl flex flex-col h-[700px] overflow-hidden max-w-5xl mx-auto text-zinc-100">
+    <div className="flex flex-col w-full text-zinc-800 p-2">
       
       {/* Top Banner Row */}
-      <div className="flex items-center justify-between pb-4 border-b border-white/15 mb-6">
+      <div className="flex items-center justify-between pb-4 border-b border-zinc-200 mb-6">
         <div className="flex items-center gap-3">
           <button
             onClick={selectedKb ? () => setSelectedKb(null) : onBack}
-            className="p-2.5 rounded-xl border border-white/10 bg-white/[0.01] hover:bg-white/10 text-zinc-400 hover:text-white transition duration-200 cursor-pointer"
+            className="p-2.5 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-500 hover:text-zinc-900 transition duration-200 cursor-pointer"
             title="Go Back"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h2 className="text-base sm:text-lg font-mono uppercase tracking-[0.2em] text-zinc-200 flex items-center gap-2">
-              <Database className="w-5 h-5 text-orange-400 animate-pulse" />
+            <h2 className="text-base sm:text-lg font-mono uppercase tracking-[0.2em] text-zinc-900 flex items-center gap-2">
+              <Database className="w-5 h-5 text-zinc-900 animate-pulse" />
               {selectedKb ? `KB: ${selectedKb.name}` : "Knowledge Base Studio"}
             </h2>
             <p className="text-xs text-zinc-500 font-serif italic mt-0.5">
@@ -264,16 +264,16 @@ export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({ onBa
         {/* Global Loading Spinner / Status Toast */}
         <div className="flex items-center gap-3">
           {isLoading && (
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-white/5 rounded-lg border border-white/5">
-              <span className="w-2.5 h-2.5 rounded-full border-2 border-orange-500 border-t-transparent animate-spin"></span>
-              <span className="text-[9px] font-mono text-zinc-400 uppercase tracking-wider">Syncing...</span>
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-zinc-50 rounded-lg border border-zinc-200">
+              <span className="w-2.5 h-2.5 rounded-full border-2 border-zinc-900 border-t-transparent animate-spin"></span>
+              <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">Syncing...</span>
             </div>
           )}
           {statusMessage && (
             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[10px] font-mono uppercase tracking-wider ${
               statusMessage.type === "success" 
-                ? "bg-green-500/10 border-green-500/20 text-green-400" 
-                : "bg-red-500/10 border-red-500/20 text-red-400"
+                ? "bg-green-50 border-green-200 text-green-700" 
+                : "bg-red-50 border-red-200 text-red-700"
             }`}>
               {statusMessage.type === "success" ? <CheckCircle className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
               <span>{statusMessage.text}</span>
@@ -287,37 +287,37 @@ export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({ onBa
         <div className="flex-1 flex flex-col min-h-0">
           {/* Create New KB Accordion / Mini Form */}
           {isCreatingKb ? (
-            <form onSubmit={handleCreateKb} className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 mb-6 space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-white/5">
-                <span className="text-xs font-mono font-bold uppercase tracking-wider text-orange-400">Initialize New Knowledge Base</span>
+            <form onSubmit={handleCreateKb} className="bg-zinc-50 border border-zinc-200 rounded-2xl p-5 mb-6 space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-zinc-200">
+                <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-900">Initialize New Knowledge Base</span>
                 <button
                   type="button"
                   onClick={() => setIsCreatingKb(false)}
-                  className="text-xs font-mono text-zinc-500 hover:text-white cursor-pointer"
+                  className="text-xs font-mono text-zinc-500 hover:text-zinc-900 cursor-pointer"
                 >
                   Cancel
                 </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-450 mb-1.5">KB Reference Name *</label>
+                  <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-1.5">KB Reference Name *</label>
                   <input
                     type="text"
                     required
                     value={kbName}
                     onChange={(e) => setKbName(e.target.value)}
                     placeholder="e.g. Refund Policy FAQ"
-                    className="w-full bg-[#110b07] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-orange-500/50"
+                    className="w-full bg-white border border-zinc-200 rounded-xl p-3 text-xs text-zinc-900 focus:outline-none focus:border-zinc-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-450 mb-1.5">Description</label>
+                  <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-1.5">Description</label>
                   <input
                     type="text"
                     value={kbDescription}
                     onChange={(e) => setKbDescription(e.target.value)}
                     placeholder="Reference material for products, rules, or guidelines."
-                    className="w-full bg-[#110b07] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-orange-500/50"
+                    className="w-full bg-white border border-zinc-200 rounded-xl p-3 text-xs text-zinc-900 focus:outline-none focus:border-zinc-900"
                   />
                 </div>
               </div>
@@ -325,7 +325,7 @@ export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({ onBa
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-400 text-white text-xs font-mono uppercase tracking-wider font-semibold shadow-lg shadow-orange-500/10 flex items-center gap-1.5 cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-900 text-white text-xs font-mono uppercase tracking-wider font-semibold shadow-none flex items-center gap-1.5 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Create Base
@@ -337,7 +337,7 @@ export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({ onBa
               <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">Available Knowledge Repositories</span>
               <button
                 onClick={() => setIsCreatingKb(true)}
-                className="px-4 py-2 border border-orange-500/20 text-orange-400 bg-orange-500/5 hover:bg-orange-500/10 hover:text-orange-350 rounded-xl text-xs font-mono uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-all"
+                className="px-4 py-2 border border-zinc-200 text-zinc-800 bg-white hover:bg-zinc-50 rounded-xl text-xs font-mono uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-all"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Add Knowledge Base
@@ -348,10 +348,10 @@ export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({ onBa
           {/* List KBs Grid */}
           <div className="flex-1 overflow-y-auto custom-scrollbar pr-1.5">
             {knowledgeBases.length === 0 ? (
-              <div className="h-44 border border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center text-zinc-500 text-center p-6 space-y-2">
-                <FolderOpen className="w-8 h-8 text-zinc-650" />
-                <p className="text-xs font-mono uppercase tracking-wider">No Knowledge Bases Found</p>
-                <p className="text-[11px] text-zinc-600 font-serif italic max-w-sm">
+              <div className="h-44 border border-dashed border-zinc-200 rounded-2xl flex flex-col items-center justify-center text-zinc-500 text-center p-6 space-y-2">
+                <FolderOpen className="w-8 h-8 text-zinc-400" />
+                <p className="text-xs font-mono uppercase tracking-wider text-zinc-700">No Knowledge Bases Found</p>
+                <p className="text-[11px] text-zinc-500 font-serif italic max-w-sm">
                   "Initialize your first knowledge base to upload documents. Then link it to custom agents to inject custom facts."
                 </p>
               </div>
@@ -360,36 +360,36 @@ export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({ onBa
                 {knowledgeBases.map((kb) => (
                   <div
                     key={kb.id}
-                    className="group bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 hover:border-white/10 p-5 rounded-2xl flex flex-col justify-between h-40 transition duration-300 shadow-md"
+                    className="group bg-white hover:bg-zinc-50 border border-zinc-200 p-5 rounded-2xl flex flex-col justify-between h-40 transition duration-300 shadow-sm"
                   >
                     <div>
                       <div className="flex items-center justify-between">
-                        <div className="w-8 h-8 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
+                        <div className="w-8 h-8 rounded-lg bg-zinc-100 border border-zinc-200 flex items-center justify-center text-zinc-700">
                           <BookOpen className="w-4 h-4" />
                         </div>
                         <span className="text-[9px] font-mono uppercase tracking-widest text-zinc-500">
                           {kb.documents.length} {kb.documents.length === 1 ? "document" : "documents"}
                         </span>
                       </div>
-                      <h3 className="text-sm font-semibold text-white group-hover:text-orange-400 transition-colors mt-3">
+                      <h3 className="text-sm font-semibold text-zinc-900 group-hover:text-zinc-950 mt-3">
                         {kb.name}
                       </h3>
-                      <p className="text-[11px] text-zinc-400 line-clamp-2 mt-1 leading-normal font-sans">
+                      <p className="text-[11px] text-zinc-500 line-clamp-2 mt-1 leading-normal font-sans">
                         {kb.description}
                       </p>
                     </div>
 
-                    <div className="border-t border-white/5 pt-3 flex items-center justify-between mt-auto">
+                    <div className="border-t border-zinc-200 pt-3 flex items-center justify-between mt-auto">
                       <button
                         onClick={() => handleSelectKb(kb)}
-                        className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[10px] font-mono uppercase tracking-widest text-zinc-300 hover:text-white cursor-pointer transition flex items-center gap-1.5"
+                        className="px-3 py-1.5 rounded-lg bg-zinc-950 hover:bg-zinc-900 text-[10px] font-mono uppercase tracking-widest text-white cursor-pointer transition flex items-center gap-1.5"
                       >
                         <FolderOpen className="w-3.5 h-3.5" />
                         Open Repo
                       </button>
                       <button
                         onClick={() => handleDeleteKb(kb.id, kb.name)}
-                        className="p-1.5 rounded-lg hover:bg-red-500/10 text-zinc-500 hover:text-red-400 cursor-pointer transition"
+                        className="p-1.5 rounded-lg hover:bg-red-50 text-zinc-400 hover:text-red-600 cursor-pointer transition"
                         title="Delete Knowledge Base"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -407,15 +407,15 @@ export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({ onBa
       {selectedKb && (
         <div className="flex-1 flex gap-6 min-h-0">
           {/* Left panel: Documents list */}
-          <div className="w-2/5 border-r border-white/5 pr-4 flex flex-col h-full min-h-0">
+          <div className="w-2/5 border-r border-zinc-200 pr-4 flex flex-col h-full min-h-0">
             <div className="flex items-center justify-between mb-3 shrink-0">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 flex items-center gap-1">
-                <FileText className="w-3.5 h-3.5 text-orange-400" />
+              <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-650 flex items-center gap-1">
+                <FileText className="w-3.5 h-3.5 text-zinc-800" />
                 Doc Directory ({selectedKb.documents.length})
               </span>
               <button
                 onClick={handleNewDoc}
-                className="px-3 py-1 border border-orange-500/20 text-orange-400 bg-orange-500/5 hover:bg-orange-500/10 rounded-lg text-[10px] font-mono uppercase tracking-wider flex items-center gap-1 cursor-pointer transition-all"
+                className="px-3 py-1 border border-zinc-200 text-zinc-800 bg-white hover:bg-zinc-50 rounded-lg text-[10px] font-mono uppercase tracking-wider flex items-center gap-1 cursor-pointer transition-all"
               >
                 <Plus className="w-3 h-3" />
                 Add Doc
@@ -424,7 +424,7 @@ export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({ onBa
 
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-2">
               {selectedKb.documents.length === 0 ? (
-                <div className="h-32 border border-dashed border-white/5 rounded-xl flex flex-col items-center justify-center text-zinc-650 text-center p-4">
+                <div className="h-32 border border-dashed border-zinc-200 rounded-xl flex flex-col items-center justify-center text-zinc-400 text-center p-4">
                   <AlertCircle className="w-6 h-6 mb-1" />
                   <p className="text-[10px] font-mono uppercase tracking-wider">Base is Empty</p>
                   <p className="text-[9px] font-serif italic mt-0.5">Click "Add Doc" to populate reference files.</p>
@@ -438,12 +438,12 @@ export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({ onBa
                       onClick={() => handleSelectDoc(doc)}
                       className={`group p-3.5 rounded-xl border text-left cursor-pointer transition-all ${
                         isEditingThis 
-                          ? "bg-white/10 border-orange-500/40" 
-                          : "bg-white/[0.01] border-white/5 hover:bg-white/[0.02]"
+                          ? "bg-zinc-100 border-zinc-400" 
+                          : "bg-white border-zinc-200 hover:bg-zinc-50"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <span className={`text-[11px] font-semibold truncate ${isEditingThis ? "text-orange-400" : "text-zinc-250 group-hover:text-white"}`}>
+                        <span className={`text-[11px] font-semibold truncate ${isEditingThis ? "text-zinc-950 font-bold" : "text-zinc-800"}`}>
                           {doc.title}
                         </span>
                         <button
@@ -451,13 +451,13 @@ export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({ onBa
                             e.stopPropagation();
                             handleDeleteDoc(doc.id, doc.title);
                           }}
-                          className="p-1 rounded opacity-30 hover:opacity-100 text-zinc-400 hover:text-red-400 cursor-pointer transition shrink-0"
+                          className="p-1 rounded opacity-30 hover:opacity-100 text-zinc-400 hover:text-red-600 cursor-pointer transition shrink-0"
                           title="Delete Document"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                      <p className="text-[10px] text-zinc-550 line-clamp-2 mt-1 leading-normal font-sans">
+                      <p className="text-[10px] text-zinc-500 line-clamp-2 mt-1 leading-normal font-sans">
                         {doc.content}
                       </p>
                     </div>
@@ -468,18 +468,18 @@ export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({ onBa
           </div>
 
           {/* Right panel: Active document editor */}
-          <div className="flex-1 flex flex-col h-full min-h-0 bg-white/[0.01] border border-white/5 p-5 rounded-2xl shadow-inner">
+          <div className="flex-1 flex flex-col h-full min-h-0 bg-zinc-50 border border-zinc-200 p-5 rounded-2xl shadow-inner">
             {activeDoc ? (
               <div className="flex-1 flex flex-col min-h-0 space-y-4">
-                <div className="flex items-center justify-between shrink-0 pb-2 border-b border-white/5">
-                  <div className="flex items-center gap-1.5 text-xs font-mono text-zinc-300 font-bold uppercase">
-                    <Edit className="w-4 h-4 text-orange-400" />
+                <div className="flex items-center justify-between shrink-0 pb-2 border-b border-zinc-200">
+                  <div className="flex items-center gap-1.5 text-xs font-mono text-zinc-800 font-bold uppercase">
+                    <Edit className="w-4 h-4 text-zinc-750" />
                     <span>Document Editor</span>
                   </div>
                   <button
                     onClick={handleSaveDoc}
                     disabled={isLoading}
-                    className="px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-400 hover:to-amber-500 text-white rounded-xl text-xs font-mono uppercase tracking-wider font-semibold active:scale-95 transition flex items-center gap-1.5 shadow-lg shadow-orange-500/5 cursor-pointer"
+                    className="px-4 py-2 bg-zinc-950 hover:bg-zinc-900 text-white rounded-xl text-xs font-mono uppercase tracking-wider font-semibold active:scale-95 transition flex items-center gap-1.5 shadow-sm cursor-pointer"
                   >
                     <Save className="w-3.5 h-3.5" />
                     Save Doc
@@ -487,30 +487,30 @@ export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({ onBa
                 </div>
 
                 <div className="shrink-0">
-                  <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-450 mb-1.5">Document Title *</label>
+                  <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-1.5">Document Title *</label>
                   <input
                     type="text"
                     required
                     value={docTitle}
                     onChange={(e) => setDocTitle(e.target.value)}
                     placeholder="e.g. Standard Return Window FAQ"
-                    className="w-full bg-[#110b07] border border-white/10 rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-orange-500/50"
+                    className="w-full bg-white border border-zinc-200 rounded-xl p-3.5 text-xs text-zinc-900 focus:outline-none focus:border-zinc-900"
                   />
                 </div>
 
                 <div className="flex-1 flex flex-col min-h-0">
-                  <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-450 mb-1.5 shrink-0">Document Content *</label>
+                  <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-1.5 shrink-0">Document Content *</label>
                   <textarea
                     required
                     value={docContent}
                     onChange={(e) => setDocContent(e.target.value)}
                     placeholder="Paste reference text here. Keep it descriptive (up to 20,000 characters). This material will guide the voice agent's dialogue directly..."
-                    className="flex-1 w-full bg-[#110b07] border border-white/10 rounded-xl p-4 text-xs font-sans leading-relaxed text-zinc-205 focus:outline-none focus:border-orange-500/50 resize-none overflow-y-auto custom-scrollbar"
+                    className="flex-1 w-full bg-white border border-zinc-200 rounded-xl p-4 text-xs font-sans leading-relaxed text-zinc-800 focus:outline-none focus:border-zinc-900 resize-none overflow-y-auto custom-scrollbar"
                   />
                 </div>
 
-                <div className="shrink-0 flex items-center gap-1.5 bg-orange-500/5 border border-orange-500/10 p-3 rounded-xl text-[10px] text-zinc-400 leading-normal font-sans">
-                  <Info className="w-4 h-4 text-orange-400 shrink-0" />
+                <div className="shrink-0 flex items-center gap-1.5 bg-zinc-100 border border-zinc-200 p-3 rounded-xl text-[10px] text-zinc-650 leading-normal font-sans">
+                  <Info className="w-4 h-4 text-zinc-650 shrink-0" />
                   <span>
                     💡 <strong>Pro Tip:</strong> Link this Knowledge Base in your custom agent settings to sync this reference data into their setup configuration payload!
                   </span>
@@ -518,10 +518,10 @@ export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({ onBa
               </div>
             ) : (
               <div className="flex-grow flex flex-col items-center justify-center text-zinc-500 p-6 text-center space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400">
-                  <FileText className="w-6 h-6 text-orange-400/50" />
+                <div className="w-12 h-12 rounded-2xl bg-white border border-zinc-200 flex items-center justify-center text-zinc-400">
+                  <FileText className="w-6 h-6 text-zinc-500" />
                 </div>
-                <h3 className="text-xs font-mono uppercase tracking-wider">No Active Document selected</h3>
+                <h3 className="text-xs font-mono uppercase tracking-wider text-zinc-700">No Active Document selected</h3>
                 <p className="text-[11px] text-zinc-500 font-serif italic max-w-sm">
                   "Select an existing document from the left directory to modify its contents, or click 'Add Doc' to build a new reference card."
                 </p>

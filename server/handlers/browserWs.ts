@@ -53,11 +53,12 @@ export async function handleBrowserWebSocket(clientWs: WebSocket): Promise<void>
         const googlePhoneKey = message.googlePhoneKey || "default";
         const personaId = message.personaId || "unknown";
         const personaName = message.personaName || "Unknown Agent";
+        const initialGreeting = message.initialGreeting || "Welcome to The Grand Imperial Hotel. How may I assist you today?";
 
         // Initialize call logger
         callLogger = new CallLogger(personaId, personaName, "browser-user", "browser", "outbound");
 
-        console.log(`[WS] Setting up Gemini. Voice: ${voice}. Instruction: ${instruction.length} chars. Temp: ${temperature}`);
+        console.log(`[WS] Setting up Gemini. Voice: ${voice}. Instruction: ${instruction.length} chars. Temp: ${temperature}. Greeting: ${initialGreeting}`);
 
         try {
           const ai = getGeminiClient();
@@ -181,6 +182,23 @@ export async function handleBrowserWebSocket(clientWs: WebSocket): Promise<void>
             callId: callLogger.getCallId(),
           });
           console.log("[WS] Gemini Live session connected!");
+
+          setTimeout(() => {
+            try {
+              if (geminiSession && sessionAlive) {
+                geminiSession.sendClientContent({
+                  turns: [{
+                    role: "user",
+                    parts: [{ text: `Call connected. Greet the caller now warmly using your initial greeting: "${initialGreeting}"` }],
+                  }],
+                  turnComplete: true,
+                });
+                console.log("[WS] Greeting dispatched.");
+              }
+            } catch (err: any) {
+              console.error("[WS] Failed to send initial greeting:", err?.message || err);
+            }
+          }, 500);
         } catch (err: any) {
           console.error("[WS] Failed to connect to Gemini Live:", err);
           callLogger?.markFailed(err?.message || "Connection failed");

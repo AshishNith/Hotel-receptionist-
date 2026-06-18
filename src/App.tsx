@@ -17,7 +17,18 @@ import {
   Users, Plus, PhoneCall, Database, Sparkles, Trash2, Edit, AlertCircle, Info, Volume2, BarChart3, PhoneOutgoing
 } from "lucide-react";
 
-type PageID = "dashboard" | "creator" | "call" | "knowledge" | "analytics" | "outbound";
+import { useClientConfig } from "./config/ThemeProvider";
+import { SidebarPageID } from "./components/layout/Sidebar";
+import { DashboardLayout } from "./components/layout/DashboardLayout";
+import { DashboardHome } from "./components/pages/DashboardHome";
+import { CampaignsPage } from "./components/pages/CampaignsPage";
+import { VoicesPage } from "./components/pages/VoicesPage";
+import { SettingsPage } from "./components/pages/SettingsPage";
+import { CreditsPage } from "./components/pages/CreditsPage";
+import { ToolsPage } from "./components/pages/ToolsPage";
+import { Routes, Route, Navigate, useNavigate, useLocation, useSearchParams } from "react-router-dom";
+
+type PageID = SidebarPageID;
 
 function resampleFloat32(input: Float32Array, fromRate: number, toRate: number): Float32Array {
   if (fromRate === toRate) {
@@ -37,7 +48,25 @@ function resampleFloat32(input: Float32Array, fromRate: number, toRate: number):
 }
 
 export default function App() {
-  const [activePage, setActivePage] = useState<PageID>("dashboard");
+  const config = useClientConfig();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Compute activePage from pathname
+  const path = location.pathname.substring(1);
+  const activePage: SidebarPageID = (path === "" || path === "client") ? "dashboard" : (path as SidebarPageID);
+
+  useEffect(() => {
+    const VALID_PAGES = ["dashboard", "agents", "creator", "knowledge", "calls", "campaigns", "voices", "credits", "settings", "tools"];
+    if (path !== "" && path !== "client" && !VALID_PAGES.includes(path)) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [path, navigate]);
+
+  const callsTab = searchParams.get("tab") || "terminal";
+  const setCallsTab = (tab: "terminal" | "outbound" | "analytics") => navigate(`/calls?tab=${tab}`, { replace: true });
+
   const [sipTutorialTab, setSipTutorialTab] = useState<"sip" | "vobiz" | "asterisk" | "twilio">("sip");
   const [editingPersona, setEditingPersona] = useState<Persona | null>(null);
 
@@ -286,6 +315,7 @@ export default function App() {
           temperature: personaConfig.temperature,
           personaId: personaConfig.id,
           personaName: personaConfig.name,
+          initialGreeting: personaConfig.initialGreeting,
         }));
       };
 
@@ -535,12 +565,12 @@ export default function App() {
 
   const handleDialNumber = (number: string) => {
     startCommunicating(selectedPersona);
-    setActivePage("call");
+    navigate("/calls?tab=terminal");
   };
 
   const handleStartCall = () => {
     startCommunicating(selectedPersona);
-    setActivePage("call");
+    navigate("/calls?tab=terminal");
   };
 
   const handleSelectPersonaByPhone = (persona: Persona) => {
@@ -573,7 +603,7 @@ export default function App() {
 
     setSelectedPersona(agent);
     setEditingPersona(null);
-    setActivePage("dashboard");
+    navigate("/agents");
   };
 
   // Delete Custom Agent from MongoDB
@@ -596,26 +626,20 @@ export default function App() {
 
   const handleEditAgent = (agent: Persona) => {
     setEditingPersona(agent);
-    setActivePage("creator");
+    navigate("/creator");
   };
 
   const triggerCallForAgent = (persona: Persona) => {
     setSelectedPersona(persona);
     startCommunicating(persona);
-    setActivePage("call");
+    navigate("/calls?tab=terminal");
   };
 
   const isClientPortal = window.location.pathname === "/client";
 
   if (isClientPortal) {
     return (
-      <div className="min-h-screen bg-[#070301] text-white flex flex-col font-sans relative antialiased select-none">
-        
-        {/* Cinematic Ambient Glow Layers (Immersive UI specification) */}
-        <div className="absolute inset-0 z-0 opacity-40 pointer-events-none">
-          <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-emerald-600/20 rounded-full blur-[140px] opacity-25"></div>
-          <div className="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] bg-blue-900/30 rounded-full blur-[120px] opacity-30"></div>
-        </div>
+      <div className="min-h-screen bg-white text-zinc-900 flex flex-col font-sans relative antialiased select-none">
 
         {/* Brand Header */}
         <header className="border-b border-white/5 bg-white/[0.01] backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex items-center justify-between shadow-2xl relative">
@@ -641,331 +665,313 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#070301] text-white flex flex-col font-sans relative antialiased select-none">
-      
-      {/* Cinematic Ambient Glow Layers (Immersive UI specification) */}
-      <div className="absolute inset-0 z-0 opacity-40 pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-orange-600/25 rounded-full blur-[140px] opacity-35"></div>
-        <div className="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] bg-blue-900/30 rounded-full blur-[120px] opacity-30"></div>
-        <div className="absolute top-[40%] left-[30%] w-[300px] h-[300px] bg-white opacity-5 rounded-full blur-[100px]"></div>
-      </div>
+    <div className="min-h-screen bg-white text-zinc-900 flex flex-col font-sans relative antialiased select-none">
 
-      {/* Top Navigation & Status Block */}
-      <header className="border-b border-white/5 bg-white/[0.01] backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl relative">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-600 flex items-center justify-center text-white font-bold tracking-tight shadow-md shadow-orange-500/10">
-            AI
-          </div>
-          <div>
-            <h1 className="text-xs sm:text-sm font-semibold tracking-wide text-zinc-100 flex items-center gap-2 font-mono uppercase">
-              AI Voice Studio <span className="text-[8px] font-mono font-bold uppercase py-0.5 px-2 rounded-md bg-orange-500/15 text-orange-400 border border-orange-500/20 shadow-[0_0_10px_rgba(249,115,22,0.1)]">v3.1-Live</span>
-            </h1>
-            <p className="text-[9px] font-mono text-zinc-500 tracking-widest mt-0.5 uppercase">Low-Latency Duplex Customization Center</p>
-          </div>
-        </div>
-
-        {/* Navigation Tabs - Supporting multipage workflow */}
-        <div className="flex items-center gap-1.5 bg-black/60 border border-white/5 p-1 rounded-2xl">
-          <button
-            onClick={() => setActivePage("dashboard")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider transition-all cursor-pointer ${
-              activePage === "dashboard"
-                ? "bg-white/10 text-white border border-white/10 shadow-lg"
-                : "text-zinc-400 hover:text-white"
-            }`}
-          >
-            <Users className="w-3.5 h-3.5 text-orange-400" />
-            <span>Agent Profile</span>
-          </button>
-          <button
-            onClick={() => setActivePage("knowledge")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider transition-all cursor-pointer ${
-              activePage === "knowledge"
-                ? "bg-white/10 text-white border border-white/10 shadow-lg"
-                : "text-zinc-400 hover:text-white"
-            }`}
-          >
-            <Database className="w-3.5 h-3.5 text-orange-400" />
-            <span>Knowledge Bases</span>
-          </button>
-          <button
-            onClick={() => setActivePage("call")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider transition-all relative cursor-pointer ${
-              activePage === "call"
-                ? "bg-white/10 text-white border border-white/10 shadow-lg"
-                : "text-zinc-400 hover:text-white"
-            }`}
-          >
-            <PhoneCall className="w-3.5 h-3.5 text-orange-400" />
-            <span>VoIP Calling Terminal</span>
-            {callState === "connected" && (
-              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setActivePage("analytics")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider transition-all cursor-pointer ${
-              activePage === "analytics"
-                ? "bg-white/10 text-white border border-white/10 shadow-lg"
-                : "text-zinc-400 hover:text-white"
-            }`}
-          >
-            <BarChart3 className="w-3.5 h-3.5 text-orange-400" />
-            <span>Analytics</span>
-          </button>
-          <button
-            onClick={() => setActivePage("outbound")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider transition-all cursor-pointer ${
-              activePage === "outbound"
-                ? "bg-white/10 text-white border border-white/10 shadow-lg"
-                : "text-zinc-400 hover:text-white"
-            }`}
-          >
-            <PhoneOutgoing className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Outbound Call</span>
-          </button>
-        </div>
-
-        {/* Global telemetry status lines */}
-        <div className="hidden xl:flex items-center gap-4 text-[9px] font-mono text-zinc-400 uppercase tracking-widest leading-none">
-          <div className="flex items-center gap-1.5 border border-white/5 bg-white/[0.01] px-2.5 py-1.5 rounded-lg">
-            <span className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_8px_#22c55e]"></span>
-            <span>Realtime Node Cluster</span>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Container - Renders dynamic page views */}
-      <main className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-6 z-10 flex flex-col justify-center">
-
-        {/* 1. AGENT DASHBOARD */}
+      <DashboardLayout activePage={activePage} onNavigate={(page) => navigate("/" + page)} callActive={callState === "connected"}>
+        {/* 1. DASHBOARD HOME */}
         {activePage === "dashboard" && (
-          <div className="space-y-4">
+          <DashboardHome onPlaceCall={handleDialNumber} />
+        )}
 
-            {/* Active Agent Profile Card */}
-            {selectedPersona && (
-              <div className="relative overflow-hidden bg-gradient-to-r from-orange-950/30 via-amber-950/10 to-transparent border border-orange-500/10 rounded-3xl p-5 shadow-2xl">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-3xl shrink-0">
-                      {selectedPersona.avatar || "🤖"}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-[9px] font-mono uppercase bg-orange-500/15 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded font-bold tracking-widest">Active</span>
-                        <span className="text-[8px] font-mono text-zinc-500">{selectedPersona.voice}</span>
-                      </div>
-                      <h2 className="text-xl font-semibold tracking-tight text-white">{selectedPersona.name}</h2>
-                      <p className="text-[11px] text-zinc-400 font-mono tracking-widest uppercase">{selectedPersona.role}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0 w-full md:w-auto">
-                    <button onClick={() => handleEditAgent(selectedPersona)} className="flex-1 md:flex-none px-4 py-2.5 rounded-xl border border-white/10 hover:border-white/20 bg-white/[0.02] hover:bg-white/[0.06] text-zinc-200 hover:text-white text-[10px] font-mono uppercase tracking-wider cursor-pointer transition">Configure</button>
-                    <button onClick={() => triggerCallForAgent(selectedPersona)} className="flex-1 md:flex-none px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-400 hover:to-amber-500 text-white font-medium text-[10px] font-mono uppercase tracking-wider cursor-pointer transition">Start Call</button>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 border-t border-white/5 pt-4">
-                  <div className="md:col-span-2">
-                    <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block mb-1">System Prompt</span>
-                    <p className="text-[11px] text-zinc-300 leading-relaxed font-mono bg-black/45 border border-white/5 p-3 rounded-xl max-h-24 overflow-y-auto custom-scrollbar whitespace-pre-wrap">
-                      {selectedPersona.systemInstruction}
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 font-mono text-[11px] text-zinc-400 bg-black/25 border border-white/5 rounded-xl p-3">
-                    <div><span className="text-zinc-500">Temp</span><br /><span className="text-orange-400 font-bold">{(selectedPersona.temperature ?? 0.7).toFixed(2)}</span></div>
-                    <div><span className="text-zinc-500">Timeout</span><br /><span className="text-zinc-200 font-bold">{selectedPersona.silenceTimeout ?? 30}s</span></div>
-                    <div><span className="text-zinc-500">Noise</span><br /><span className="text-zinc-200 font-bold uppercase text-[9px]">{selectedPersona.ambientSound ?? "none"}</span></div>
-                    <div><span className="text-zinc-500">Phone</span><br /><span className="text-indigo-400 font-bold">{selectedPersona.phoneNumber ?? "N/A"}</span></div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Integrations Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 shadow-xl">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-widest text-zinc-500">
-                    <Database className="w-3 h-3 text-emerald-400" /> Database
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    {dbStatus === "connected" && <><span className="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_6px_#10b981]"></span><span className="text-[10px] font-mono text-emerald-400">Connected</span></>}
-                    {dbStatus === "connecting" && <><span className="w-2 h-2 bg-amber-500 rounded-full animate-bounce"></span><span className="text-[10px] font-mono text-amber-400">Connecting...</span></>}
-                    {dbStatus === "error" && <><span className="w-2 h-2 bg-red-500 rounded-full"></span><span className="text-[10px] font-mono text-red-400">Error</span></>}
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 shadow-xl">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-widest text-zinc-500">
-                    <Sparkles className="w-3 h-3 text-indigo-400" /> Google Workspace
-                  </span>
-                  <span className="text-[10px] font-mono text-zinc-500">{googleConnections.length} linked</span>
-                </div>
-                <form onSubmit={(e) => { e.preventDefault(); const f = e.currentTarget; const i = f.elements.namedItem("k") as HTMLInputElement; window.open(`/api/auth/google?phone=${encodeURIComponent(i.value.trim() || "default")}`, "_blank"); i.value = ""; }} className="flex gap-2">
-                  <input name="k" type="text" placeholder="Phone key" className="flex-1 bg-black/60 border border-white/10 rounded-lg px-2.5 py-1.5 text-[11px] font-mono text-white focus:outline-none focus:border-indigo-500 placeholder:text-zinc-600" />
-                  <button type="submit" className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[9px] font-mono uppercase tracking-widest font-bold cursor-pointer whitespace-nowrap">Link</button>
-                </form>
-              </div>
+        {/* 2. AGENT DIRECTORY (original dashboard + list) */}
+        {activePage === "agents" && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+            {/* Left Column: Directory list */}
+            <div className="lg:col-span-5 flex flex-col">
+              <PersonaList
+                selectedPersona={selectedPersona}
+                onSelectPersona={setSelectedPersona}
+                callState={callState}
+                onStartCall={handleStartCall}
+                personas={personas}
+                onEditPersona={handleEditAgent}
+                onDeletePersona={handleDeleteAgent}
+              />
+              <button
+                onClick={() => {
+                  setEditingPersona(null);
+                  navigate("/creator");
+                }}
+                className="mt-4 py-3 rounded-xl border border-dashed border-zinc-300 hover:border-zinc-500 bg-white hover:bg-zinc-50 text-xs font-mono uppercase tracking-widest text-zinc-500 hover:text-zinc-900 transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" /> Create Custom Agent
+              </button>
             </div>
 
-            {/* PSTN / SIP Integration Hub */}
-            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 shadow-xl">
-              <div className="flex items-center gap-1.5 mb-3">
-                <span className="flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-widest text-zinc-500">
-                  <PhoneCall className="w-3 h-3 text-indigo-400" /> PSTN / SIP
-                </span>
-                <div className="flex gap-1 ml-auto">
-                  {(["sip","vobiz","asterisk","twilio"] as const).map((t) => (
-                    <button key={t} onClick={() => setSipTutorialTab(t)} className={`px-2.5 py-1 rounded-lg text-[9px] font-mono uppercase tracking-wider cursor-pointer transition ${sipTutorialTab === t ? "bg-indigo-600 text-white" : "text-zinc-400 hover:text-white hover:bg-white/5"}`}>
-                      {t === "sip" ? "Universal SIP" : t === "vobiz" ? "Vobiz" : t === "asterisk" ? "Asterisk" : "Twilio"}
-                    </button>
-                  ))}
+            {/* Right Column: Selected agent profile card & integrations */}
+            <div className="lg:col-span-7 space-y-4 pr-2">
+              {/* Selected agent profile card */}
+              {selectedPersona && (
+                <div className="relative overflow-hidden bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm">
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 rounded-2xl bg-zinc-50 border border-zinc-200 flex items-center justify-center text-3xl shrink-0">
+                        {selectedPersona.avatar || "🤖"}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-[9px] font-mono uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded font-bold tracking-widest">Active</span>
+                          <span className="text-[8px] font-mono text-zinc-500">{selectedPersona.voice}</span>
+                        </div>
+                        <h2 className="text-xl font-semibold tracking-tight text-zinc-900">{selectedPersona.name}</h2>
+                        <p className="text-[11px] text-zinc-500 font-mono tracking-widest uppercase">{selectedPersona.role}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 w-full md:w-auto">
+                      <button onClick={() => handleEditAgent(selectedPersona)} className="flex-1 md:flex-none px-4 py-2.5 rounded-xl border border-zinc-200 hover:border-zinc-350 bg-white text-zinc-800 hover:text-zinc-950 text-[10px] font-mono uppercase tracking-wider cursor-pointer transition">Configure</button>
+                      <button onClick={() => triggerCallForAgent(selectedPersona)} className="flex-1 md:flex-none px-5 py-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-900 text-white font-medium text-[10px] font-mono uppercase tracking-wider cursor-pointer transition">Start Call</button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 border-t border-zinc-200 pt-4">
+                    <div className="md:col-span-2">
+                      <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block mb-1">System Prompt</span>
+                      <p className="text-[11px] text-zinc-650 leading-relaxed font-mono bg-zinc-50 border border-zinc-200 p-3 rounded-xl max-h-24 overflow-y-auto custom-scrollbar whitespace-pre-wrap">
+                        {selectedPersona.systemInstruction}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 font-mono text-[11px] text-zinc-650 bg-zinc-50 border border-zinc-200 rounded-xl p-3">
+                      <div><span className="text-zinc-500">Temp</span><br /><span className="text-zinc-950 font-bold">{(selectedPersona.temperature ?? 0.7).toFixed(2)}</span></div>
+                      <div><span className="text-zinc-500">Timeout</span><br /><span className="text-zinc-950 font-bold">{selectedPersona.silenceTimeout ?? 30}s</span></div>
+                      <div><span className="text-zinc-500">Noise</span><br /><span className="text-zinc-950 font-bold uppercase text-[9px]">{selectedPersona.ambientSound ?? "none"}</span></div>
+                      <div><span className="text-zinc-500">Phone</span><br /><span className="text-zinc-950 font-bold">{selectedPersona.phoneNumber ?? "N/A"}</span></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Integrations Row */}
+              <div className="flex flex-col gap-4">
+                <div className="bg-white border border-zinc-200 rounded-2xl p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-widest text-zinc-500">
+                      <Database className="w-3 h-3 text-emerald-600" /> Database
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {dbStatus === "connected" && <><span className="w-2 h-2 bg-emerald-500 rounded-full"></span><span className="text-[10px] font-mono text-emerald-700 font-semibold">Connected</span></>}
+                      {dbStatus === "connecting" && <><span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span><span className="text-[10px] font-mono text-amber-700 font-semibold">Connecting...</span></>}
+                      {dbStatus === "error" && <><span className="w-2 h-2 bg-red-500 rounded-full"></span><span className="text-[10px] font-mono text-red-700 font-semibold">Error</span></>}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-zinc-200 rounded-2xl p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-widest text-zinc-500">
+                      <Sparkles className="w-3 h-3 text-indigo-600" /> Google Workspace
+                    </span>
+                    <span className="text-[10px] font-mono text-zinc-500">{googleConnections.length} linked</span>
+                  </div>
+                  <form onSubmit={(e) => { e.preventDefault(); const f = e.currentTarget; const i = f.elements.namedItem("k") as HTMLInputElement; window.open(`/api/auth/google?phone=${encodeURIComponent(i.value.trim() || "default")}`, "_blank"); i.value = ""; }} className="flex gap-2">
+                    <input name="k" type="text" placeholder="Phone key" className="flex-1 bg-white border border-zinc-300 rounded-lg px-2.5 py-1.5 text-[11px] font-mono text-zinc-950 focus:outline-none focus:border-zinc-950 placeholder:text-zinc-400" />
+                    <button type="submit" className="px-3 py-1.5 bg-zinc-950 hover:bg-zinc-900 text-white rounded-lg text-[9px] font-mono uppercase tracking-widest font-bold cursor-pointer whitespace-nowrap">Link</button>
+                  </form>
                 </div>
               </div>
 
-              {sipTutorialTab === "sip" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <div className="bg-black/40 border border-white/5 rounded-xl p-3">
-                    <div className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">WebSocket URI</div>
-                    <code className="text-[10px] font-mono text-emerald-400 break-all">{(window.location.protocol === "https:" ? "wss:" : "ws:") + "//" + window.location.host + "/api/sip/live?personaId=" + selectedPersona.id}</code>
-                  </div>
-                  <div className="bg-black/40 border border-white/5 rounded-xl p-3">
-                    <div className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Webhook XML</div>
-                    <code className="text-[10px] font-mono text-orange-400 break-all">{window.location.origin + "/api/sip/incoming-call?personaId=" + selectedPersona.id}</code>
+              {/* PSTN / SIP Integration Hub */}
+              <div className="bg-white border border-zinc-200 rounded-2xl p-4 shadow-sm">
+                <div className="flex items-center gap-1.5 mb-3">
+                  <span className="flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-widest text-zinc-500">
+                    <PhoneCall className="w-3 h-3 text-zinc-800" /> PSTN / SIP
+                  </span>
+                  <div className="flex gap-1 ml-auto">
+                    {(["sip","vobiz","asterisk","twilio"] as const).map((t) => (
+                      <button key={t} onClick={() => setSipTutorialTab(t)} className={`px-2.5 py-1 rounded-lg text-[9px] font-mono uppercase tracking-wider cursor-pointer transition ${sipTutorialTab === t ? "bg-zinc-950 text-white" : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100"}`}>
+                        {t === "sip" ? "Universal SIP" : t === "vobiz" ? "Vobiz" : t === "asterisk" ? "Asterisk" : "Twilio"}
+                      </button>
+                    ))}
                   </div>
                 </div>
-              )}
 
-              {sipTutorialTab === "vobiz" && (
-                <div className="bg-black/40 border border-white/5 rounded-xl p-3">
-                  <div className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Vobiz Webhook URL</div>
-                  <code className="text-[10px] font-mono text-orange-400 break-all">{window.location.origin + "/api/twilio/incoming-call?personaId=" + selectedPersona.id}</code>
-                </div>
-              )}
+                {sipTutorialTab === "sip" && (
+                  <div className="flex flex-col gap-2">
+                    <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3">
+                      <div className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">WebSocket URI</div>
+                      <code className="text-[10px] font-mono text-emerald-700 break-all">{(window.location.protocol === "https:" ? "wss:" : "ws:") + "//" + window.location.host + "/api/sip/live?personaId=" + selectedPersona.id}</code>
+                    </div>
+                    <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3">
+                      <div className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Webhook XML</div>
+                      <code className="text-[10px] font-mono text-orange-700 break-all">{window.location.origin + "/api/sip/incoming-call?personaId=" + selectedPersona.id}</code>
+                    </div>
+                  </div>
+                )}
 
-              {sipTutorialTab === "asterisk" && (
-                <div>
-                  <div className="bg-black/40 border border-white/5 rounded-xl p-3 mb-2">
-                    <div className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Dialplan (extensions.conf)</div>
-                    <pre className="text-[10px] font-mono text-zinc-300 bg-black/60 p-2 rounded-lg border border-white/5 overflow-x-auto max-h-24">
-{`[from-sip-trunk]
+                {sipTutorialTab === "vobiz" && (
+                  <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3">
+                    <div className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Vobiz Webhook URL</div>
+                    <code className="text-[10px] font-mono text-orange-700 break-all">{window.location.origin + "/api/twilio/incoming-call?personaId=" + selectedPersona.id}</code>
+                  </div>
+                )}
+
+                {sipTutorialTab === "asterisk" && (
+                  <div>
+                    <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3 mb-2">
+                      <div className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Dialplan (extensions.conf)</div>
+                      <pre className="text-[10px] font-mono text-zinc-700 bg-white p-2 rounded-lg border border-zinc-200 overflow-x-auto max-h-24">
+  {`[from-sip-trunk]
 exten => _X.,1,Answer()
  same => n,Jack(connect-stream,url=wss://${window.location.host}/api/sip/live?personaId=${selectedPersona.id})
  same => n,Hangup()`}
-                    </pre>
+                      </pre>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {sipTutorialTab === "twilio" && (
-                <div className="bg-black/40 border border-white/5 rounded-xl p-3 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Twilio Webhook</div>
-                    <code className="text-[10px] font-mono text-orange-400 break-all">{window.location.origin + "/api/twilio/incoming-call?personaId=" + selectedPersona.id}</code>
+                {sipTutorialTab === "twilio" && (
+                  <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Twilio Webhook</div>
+                      <code className="text-[10px] font-mono text-orange-700 break-all">{window.location.origin + "/api/twilio/incoming-call?personaId=" + selectedPersona.id}</code>
+                    </div>
+                    <button onClick={() => { navigator.clipboard.writeText(window.location.origin + "/api/twilio/incoming-call?personaId=" + selectedPersona.id); }} className="shrink-0 px-3 py-1.5 border border-zinc-200 hover:bg-zinc-100 text-zinc-700 hover:text-zinc-900 bg-white rounded-lg text-[9px] font-mono uppercase tracking-widest cursor-pointer transition">Copy</button>
                   </div>
-                  <button onClick={() => { navigator.clipboard.writeText(window.location.origin + "/api/twilio/incoming-call?personaId=" + selectedPersona.id); }} className="shrink-0 px-3 py-1.5 border border-white/10 hover:bg-white/5 text-zinc-300 hover:text-white rounded-lg text-[9px] font-mono uppercase tracking-widest cursor-pointer transition">Copy</button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-
           </div>
         )}
 
-        {/* 2. AGENT BUILDER WIZARD */}
+        {/* 3. AGENT BUILDER WIZARD */}
         {activePage === "creator" && (
           <div className="h-full">
             <AgentCreator
               onSaveAgent={handleSaveAgent}
               onCancel={() => {
                 setEditingPersona(null);
-                setActivePage("dashboard");
+                navigate("/agents");
               }}
               editingPersona={editingPersona}
             />
           </div>
         )}
 
-        {/* 3. IMMERSIVE DUPLEX CALLING WORKSPACE */}
-        {activePage === "call" && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-            
-            {/* Left Side: Directory of Personas (4 columns) */}
-            {/* Left Side: Active Dial pad & call console (6 columns) */}
-            <section className="lg:col-span-6 flex flex-col h-[650px]">
-              {callState === "idle" || callState === "ended" ? (
-                <DialPad
-                  onStartCallWithNumber={handleDialNumber}
-                  personas={personas}
-                  onSelectPersonaByPhone={handleSelectPersonaByPhone}
-                  callState={callState}
-                />
-              ) : (
-                <CallConsole
-                  callState={callState}
-                  persona={selectedPersona}
-                  isMuted={isMuted}
-                  onToggleMute={handleToggleMute}
-                  onEndCall={handleEndCall}
-                  errorMessage={errorMessage}
-                  activeSpeakerDetect={activeSpeakerDetect}
-                  activeVoiceDetect={activeVoiceDetect}
-                  latencyMs={latencyMs}
-                />
-              )}
-            </section>
+        {/* 4. CALLS (TABBED WORKSPACE) */}
+        {activePage === "calls" && (
+          <div className="space-y-6">
+            {/* Top Sub-tabs */}
+            <div className="flex items-center gap-2 border-b border-zinc-200 pb-4">
+              <button
+                onClick={() => setCallsTab("terminal")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider transition-all cursor-pointer border ${
+                  callsTab === "terminal"
+                    ? "bg-zinc-950 text-white border-zinc-950 shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 border-transparent"
+                }`}
+              >
+                <PhoneCall className="w-3.5 h-3.5" style={callsTab !== "terminal" ? { color: config.brand.accentColor } : undefined} />
+                VoIP Terminal
+              </button>
+              <button
+                onClick={() => setCallsTab("outbound")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider transition-all cursor-pointer border ${
+                  callsTab === "outbound"
+                    ? "bg-zinc-950 text-white border-zinc-950 shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 border-transparent"
+                }`}
+              >
+                <PhoneOutgoing className="w-3.5 h-3.5" style={callsTab !== "outbound" ? { color: "#0891b2" } : undefined} />
+                Outbound Dialer
+              </button>
+              <button
+                onClick={() => setCallsTab("analytics")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider transition-all cursor-pointer border ${
+                  callsTab === "analytics"
+                    ? "bg-zinc-950 text-white border-zinc-950 shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 border-transparent"
+                }`}
+              >
+                <BarChart3 className="w-3.5 h-3.5" style={callsTab !== "analytics" ? { color: "#7c3aed" } : undefined} />
+                Analytics
+              </button>
+            </div>
 
-            {/* Right Side: Transcription chat feed (6 columns) */}
-            <section className="lg:col-span-6 flex flex-col h-[650px]">
-              <TranscriptList
-                messages={messages}
-                persona={selectedPersona}
-                callState={callState}
-              />
-            </section>
+            {/* Sub-tab Views */}
+            {callsTab === "terminal" && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                <section className="lg:col-span-6 flex flex-col h-[650px]">
+                  {callState === "idle" || callState === "ended" ? (
+                    <DialPad
+                      onStartCallWithNumber={handleDialNumber}
+                      personas={personas}
+                      onSelectPersonaByPhone={handleSelectPersonaByPhone}
+                      callState={callState}
+                    />
+                  ) : (
+                    <CallConsole
+                      callState={callState}
+                      persona={selectedPersona}
+                      isMuted={isMuted}
+                      onToggleMute={handleToggleMute}
+                      onEndCall={handleEndCall}
+                      errorMessage={errorMessage}
+                      activeSpeakerDetect={activeSpeakerDetect}
+                      activeVoiceDetect={activeVoiceDetect}
+                      latencyMs={latencyMs}
+                    />
+                  )}
+                </section>
+                <section className="lg:col-span-6 flex flex-col h-[650px]">
+                  <TranscriptList
+                    messages={messages}
+                    persona={selectedPersona}
+                    callState={callState}
+                  />
+                </section>
+                <section className="lg:col-span-12 mt-2">
+                  <CallStats
+                    callState={callState}
+                    persona={selectedPersona}
+                    packetCount={packetCount}
+                    callStartTime={callStartTime}
+                  />
+                </section>
+              </div>
+            )}
 
-            {/* Bottom Panel: Telemetry Dashboard (Full width - 12 columns) */}
-            <section className="lg:col-span-12 mt-2">
-              <CallStats
-                callState={callState}
-                persona={selectedPersona}
-                packetCount={packetCount}
-                callStartTime={callStartTime}
-              />
-            </section>
+            {callsTab === "outbound" && (
+              <OutboundCaller />
+            )}
+
+            {callsTab === "analytics" && (
+              <AnalyticsDashboard />
+            )}
           </div>
         )}
 
-        {/* 4. KNOWLEDGE BASE MANAGER */}
+        {/* 5. KNOWLEDGE BASE MANAGER */}
         {activePage === "knowledge" && (
           <div className="h-full">
             <KnowledgeBaseManager
-              onBack={() => setActivePage("dashboard")}
+              onBack={() => navigate("/agents")}
             />
           </div>
         )}
 
-        {/* 5. ANALYTICS DASHBOARD */}
-        {activePage === "analytics" && (
-          <AnalyticsDashboard />
+        {/* 6. CAMPAIGNS */}
+        {activePage === "campaigns" && (
+          <CampaignsPage />
         )}
 
-        {/* 6. OUTBOUND CALLING */}
-        {activePage === "outbound" && (
-          <OutboundCaller />
+        {/* 7. VOICES */}
+        {activePage === "voices" && (
+          <VoicesPage />
         )}
 
-      </main>
+        {/* 8. CREDITS */}
+        {activePage === "credits" && (
+          <CreditsPage />
+        )}
 
-      {/* Humble Footer */}
-      <footer className="border-t border-white/5 py-6 px-8 text-center text-xs text-zinc-500 bg-transparent z-10 flex flex-col sm:flex-row items-center justify-between gap-3 max-w-7xl mx-auto w-full font-sans">
-        <p className="font-serif italic text-zinc-450 text-sm">"Designed for real-time natural dialogues."</p>
-        <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-650">UTILITY PROTOCOL // SECURE HANDSHAKES ACTIVE</p>
-      </footer>
+        {/* 9. SETTINGS */}
+        {activePage === "settings" && (
+          <SettingsPage />
+        )}
+
+        {/* 10. AGENT TOOLS */}
+        {activePage === "tools" && (
+          <ToolsPage />
+        )}
+      </DashboardLayout>
     </div>
   );
 }
