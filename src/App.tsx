@@ -741,549 +741,134 @@ export default function App() {
       {/* Main Container - Renders dynamic page views */}
       <main className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-6 z-10 flex flex-col justify-center">
 
-        {/* 1. AGENTS DIRECTORY BENTO-GRID DASHBOARD */}
+        {/* 1. AGENT DASHBOARD */}
         {activePage === "dashboard" && (
-          <div className="space-y-6">
-            
-            {/* Active Agent Configuration Profile Card */}
+          <div className="space-y-4">
+
+            {/* Active Agent Profile Card */}
             {selectedPersona && (
-              <div className="relative overflow-hidden bg-gradient-to-r from-orange-950/30 via-amber-950/10 to-transparent border border-orange-500/10 rounded-3xl p-6 md:p-8 shadow-2xl">
-                <div className="absolute top-[-30%] right-[-5%] w-[300px] h-[300px] bg-orange-600/10 rounded-full blur-[90px] pointer-events-none"></div>
-                
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                  <div className="flex items-center gap-5">
-                    <div className="w-20 h-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-4xl shadow-inner shadow-black/60 shrink-0">
+              <div className="relative overflow-hidden bg-gradient-to-r from-orange-950/30 via-amber-950/10 to-transparent border border-orange-500/10 rounded-3xl p-5 shadow-2xl">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-3xl shrink-0">
                       {selectedPersona.avatar || "🤖"}
                     </div>
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono uppercase bg-orange-500/15 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded font-bold tracking-widest animate-pulse">
-                          Active Agent
-                        </span>
-                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">
-                          Voice: {selectedPersona.voice}
-                        </span>
+                    <div>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-[9px] font-mono uppercase bg-orange-500/15 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded font-bold tracking-widest">Active</span>
+                        <span className="text-[8px] font-mono text-zinc-500">{selectedPersona.voice}</span>
                       </div>
-                      <h2 className="text-2xl font-light tracking-tight text-white leading-none">
-                        {selectedPersona.name}
-                      </h2>
-                      <p className="text-xs text-zinc-400 font-mono tracking-widest uppercase">
-                        {selectedPersona.role}
-                      </p>
+                      <h2 className="text-xl font-semibold tracking-tight text-white">{selectedPersona.name}</h2>
+                      <p className="text-[11px] text-zinc-400 font-mono tracking-widest uppercase">{selectedPersona.role}</p>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-3 shrink-0 w-full md:w-auto">
-                    <button
-                      onClick={() => handleEditAgent(selectedPersona)}
-                      className="flex-1 md:flex-none px-5 py-3 rounded-2xl border border-white/10 hover:border-white/20 bg-white/[0.02] hover:bg-white/[0.06] text-zinc-200 hover:text-white font-medium transition duration-200 text-xs font-mono uppercase tracking-wider text-center cursor-pointer"
-                    >
-                      Configure Agent
-                    </button>
-                    <button
-                      onClick={() => triggerCallForAgent(selectedPersona)}
-                      className="flex-1 md:flex-none px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-400 hover:to-amber-500 text-white font-medium hover:scale-[102%] transition-all duration-300 shadow-xl shadow-orange-500/10 text-xs font-mono uppercase tracking-wider text-center cursor-pointer"
-                    >
-                      Start Call Test
-                    </button>
+                  <div className="flex items-center gap-2 shrink-0 w-full md:w-auto">
+                    <button onClick={() => handleEditAgent(selectedPersona)} className="flex-1 md:flex-none px-4 py-2.5 rounded-xl border border-white/10 hover:border-white/20 bg-white/[0.02] hover:bg-white/[0.06] text-zinc-200 hover:text-white text-[10px] font-mono uppercase tracking-wider cursor-pointer transition">Configure</button>
+                    <button onClick={() => triggerCallForAgent(selectedPersona)} className="flex-1 md:flex-none px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-400 hover:to-amber-500 text-white font-medium text-[10px] font-mono uppercase tracking-wider cursor-pointer transition">Start Call</button>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 border-t border-white/5 pt-6">
-                  <div className="md:col-span-2 space-y-2">
-                    <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest block font-bold">System Instructions Prompt</span>
-                    <p className="text-xs text-zinc-300 leading-relaxed font-mono bg-black/45 border border-white/5 p-4 rounded-2xl max-h-32 overflow-y-auto custom-scrollbar whitespace-pre-wrap">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 border-t border-white/5 pt-4">
+                  <div className="md:col-span-2">
+                    <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block mb-1">System Prompt</span>
+                    <p className="text-[11px] text-zinc-300 leading-relaxed font-mono bg-black/45 border border-white/5 p-3 rounded-xl max-h-24 overflow-y-auto custom-scrollbar whitespace-pre-wrap">
                       {selectedPersona.systemInstruction}
                     </p>
                   </div>
-                  <div className="space-y-4">
-                    <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest block font-bold">Model Parameters</span>
-                    <div className="bg-black/25 border border-white/5 rounded-2xl p-4 space-y-2.5 font-mono text-[11px] text-zinc-400">
-                      <div className="flex justify-between">
-                        <span className="text-zinc-500">Temperature</span>
-                        <span className="text-orange-400 font-bold">{(selectedPersona.temperature ?? 0.7).toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-zinc-500">Silence Timeout</span>
-                        <span className="text-zinc-200 font-bold">{selectedPersona.silenceTimeout ?? 30}s</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-zinc-500">Background Noise</span>
-                        <span className="text-zinc-200 font-bold uppercase text-[9px]">{selectedPersona.ambientSound ?? "none"}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-zinc-500">Phone Mapping</span>
-                        <span className="text-indigo-400 font-bold">{selectedPersona.phoneNumber ?? "N/A"}</span>
-                      </div>
-                    </div>
+                  <div className="grid grid-cols-2 gap-2 font-mono text-[11px] text-zinc-400 bg-black/25 border border-white/5 rounded-xl p-3">
+                    <div><span className="text-zinc-500">Temp</span><br /><span className="text-orange-400 font-bold">{(selectedPersona.temperature ?? 0.7).toFixed(2)}</span></div>
+                    <div><span className="text-zinc-500">Timeout</span><br /><span className="text-zinc-200 font-bold">{selectedPersona.silenceTimeout ?? 30}s</span></div>
+                    <div><span className="text-zinc-500">Noise</span><br /><span className="text-zinc-200 font-bold uppercase text-[9px]">{selectedPersona.ambientSound ?? "none"}</span></div>
+                    <div><span className="text-zinc-500">Phone</span><br /><span className="text-indigo-400 font-bold">{selectedPersona.phoneNumber ?? "N/A"}</span></div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Database & Google Workspace Integrations Status (Integrations Hub) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-              {/* Card 1: MongoDB Database Connection Status */}
-              <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 shadow-2xl relative overflow-hidden flex flex-col justify-between">
-                <div className="absolute top-0 right-0 w-[150px] h-[150px] bg-emerald-500/5 rounded-full blur-[40px] pointer-events-none"></div>
-                <div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-mono font-bold uppercase tracking-wider rounded-xl mb-4">
-                    <Database className="w-3.5 h-3.5" />
-                    MongoDB Unified Data Layer
-                  </div>
-                  <h3 className="text-xl font-light tracking-tight text-white mb-2">
-                    Centralized Configuration Database
-                  </h3>
-                  <p className="text-xs text-zinc-400 leading-relaxed mb-4">
-                    All agents, dynamic prompts, knowledge base reference documents, and user OAuth credentials are synchronized in real-time.
-                  </p>
-                </div>
-                
-                <div className="flex items-center justify-between border-t border-white/5 pt-4 mt-4">
-                  <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Database Node Health</span>
-                  <div className="flex items-center gap-2">
-                    {dbStatus === "connected" && (
-                      <>
-                        <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full shadow-[0_0_8px_#10b981] animate-pulse"></span>
-                        <span className="text-xs font-mono text-emerald-450 uppercase tracking-wider">Connected (Atlas Cluster)</span>
-                      </>
-                    )}
-                    {dbStatus === "connecting" && (
-                      <>
-                        <span className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-bounce"></span>
-                        <span className="text-xs font-mono text-amber-450 uppercase tracking-wider">Connecting...</span>
-                      </>
-                    )}
-                    {dbStatus === "error" && (
-                      <>
-                        <span className="w-2.5 h-2.5 bg-red-500 rounded-full shadow-[0_0_8px_#ef4444]"></span>
-                        <span className="text-xs font-mono text-red-450 uppercase tracking-wider">Connection Failure</span>
-                      </>
-                    )}
+            {/* Integrations Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 shadow-xl">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-widest text-zinc-500">
+                    <Database className="w-3 h-3 text-emerald-400" /> Database
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {dbStatus === "connected" && <><span className="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_6px_#10b981]"></span><span className="text-[10px] font-mono text-emerald-400">Connected</span></>}
+                    {dbStatus === "connecting" && <><span className="w-2 h-2 bg-amber-500 rounded-full animate-bounce"></span><span className="text-[10px] font-mono text-amber-400">Connecting...</span></>}
+                    {dbStatus === "error" && <><span className="w-2 h-2 bg-red-500 rounded-full"></span><span className="text-[10px] font-mono text-red-400">Error</span></>}
                   </div>
                 </div>
               </div>
 
-              {/* Card 2: Google Workspace OAuth Connections Manager */}
-              <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 shadow-2xl relative overflow-hidden flex flex-col justify-between">
-                <div className="absolute top-0 right-0 w-[150px] h-[150px] bg-indigo-500/5 rounded-full blur-[40px] pointer-events-none"></div>
-                <div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-mono font-bold uppercase tracking-wider rounded-xl mb-4">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Google Workspace Integration
-                  </div>
-                  <h3 className="text-xl font-light tracking-tight text-white mb-2">
-                    Gmail & Google Calendar Tools Linker
-                  </h3>
-                  <p className="text-xs text-zinc-400 leading-relaxed mb-4">
-                    Allow calling agents to check upcoming meetings, schedule calendar events, read unread emails, and send Gmails directly on the caller's behalf.
-                  </p>
-
-                  {/* Connection list */}
-                  <div className="space-y-2 max-h-32 overflow-y-auto mb-4 custom-scrollbar">
-                    <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold mb-1">Active Credentials Mapping</span>
-                    {googleConnections.length === 0 ? (
-                      <p className="text-[10px] text-zinc-500 italic font-mono uppercase">No active accounts linked. Authentication required to run tools.</p>
-                    ) : (
-                      googleConnections.map((conn) => (
-                        <div key={conn.phoneKey} className="flex items-center justify-between bg-black/40 border border-white/5 px-3 py-2 rounded-xl text-xs font-mono">
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="w-3.5 h-3.5 text-emerald-450 shrink-0" />
-                            <span className="text-zinc-200">Key: <strong className="text-orange-400">{conn.phoneKey}</strong></span>
-                          </div>
-                          <span className="text-[9px] text-zinc-500">Connected</span>
-                        </div>
-                      ))
-                    )}
-                  </div>
+              <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 shadow-xl">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-widest text-zinc-500">
+                    <Sparkles className="w-3 h-3 text-indigo-400" /> Google Workspace
+                  </span>
+                  <span className="text-[10px] font-mono text-zinc-500">{googleConnections.length} linked</span>
                 </div>
-
-                {/* Form to link account */}
-                <div className="border-t border-white/5 pt-4 mt-auto">
-                  <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-[0.2em] block font-bold mb-2">Link New Google Account</span>
-                  <form 
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const form = e.currentTarget;
-                      const input = form.elements.namedItem("phoneKey") as HTMLInputElement;
-                      const val = input.value.trim() || "default";
-                      window.open(`/api/auth/google?phone=${encodeURIComponent(val)}`, "_blank");
-                      input.value = "";
-                    }}
-                    className="flex gap-2"
-                  >
-                    <input 
-                      name="phoneKey"
-                      type="text" 
-                      placeholder="Caller Phone Number or 'default'"
-                      className="flex-1 bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-indigo-500 transition placeholder:text-zinc-600"
-                    />
-                    <button 
-                      type="submit"
-                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-mono uppercase tracking-widest font-bold transition whitespace-nowrap cursor-pointer"
-                    >
-                      Authenticate Account
-                    </button>
-                  </form>
-                </div>
+                <form onSubmit={(e) => { e.preventDefault(); const f = e.currentTarget; const i = f.elements.namedItem("k") as HTMLInputElement; window.open(`/api/auth/google?phone=${encodeURIComponent(i.value.trim() || "default")}`, "_blank"); i.value = ""; }} className="flex gap-2">
+                  <input name="k" type="text" placeholder="Phone key" className="flex-1 bg-black/60 border border-white/10 rounded-lg px-2.5 py-1.5 text-[11px] font-mono text-white focus:outline-none focus:border-indigo-500 placeholder:text-zinc-600" />
+                  <button type="submit" className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[9px] font-mono uppercase tracking-widest font-bold cursor-pointer whitespace-nowrap">Link</button>
+                </form>
               </div>
             </div>
 
-            {/* PSTN & Universal SIP Trunking Link Hub (Tabbed Integration Control Center) */}
-            <div className="mt-8 bg-white/[0.02] border border-white/5 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-[200px] h-[200px] bg-indigo-500/5 rounded-full blur-[60px] pointer-events-none"></div>
-              
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-white/10 pb-6 mb-6">
-                <div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-mono font-bold uppercase tracking-wider rounded-xl mb-3">
-                    <PhoneCall className="w-3.5 h-3.5" />
-                    PSTN & SIP Telecom Carrier Protocol Linker
-                  </div>
-                  <h3 className="text-xl font-light tracking-tight text-white mb-2">
-                    Connect Any SIP Provider, PBX, or VoIP Number
-                  </h3>
-                  <p className="text-xs text-zinc-400 font-serif italic max-w-2xl leading-relaxed font-normal">
-                    You can route standard G.711 μ-law (8kHz) PSTN voice streams into AI Voice Studio. Select your integration protocol path below to connect Zadarma, Telnyx, Asterisk, FreePBX, or Twilio directly to your active AI persona.
-                  </p>
-                </div>
-
-                {/* Integration Path Selection Tabs */}
-                <div className="flex flex-wrap items-center gap-1 bg-black/60 border border-white/5 p-1 rounded-2xl shrink-0">
-                  <button
-                    onClick={() => setSipTutorialTab("sip")}
-                    className={`px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider transition cursor-pointer select-none ${
-                      sipTutorialTab === "sip" 
-                        ? "bg-indigo-600 font-semibold text-white shadow-lg shadow-indigo-600/20" 
-                        : "text-zinc-400 hover:text-white hover:bg-white/5"
-                    }`}
-                  >
-                    Universal SIP
-                  </button>
-                  <button
-                    onClick={() => setSipTutorialTab("vobiz")}
-                    className={`px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider transition cursor-pointer select-none ${
-                      sipTutorialTab === "vobiz" 
-                        ? "bg-indigo-600 font-semibold text-white shadow-lg shadow-indigo-600/20" 
-                        : "text-zinc-400 hover:text-white hover:bg-white/5"
-                    }`}
-                  >
-                    Vobiz SIP Trunk
-                  </button>
-                  <button
-                    onClick={() => setSipTutorialTab("asterisk")}
-                    className={`px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider transition cursor-pointer select-none ${
-                      sipTutorialTab === "asterisk" 
-                        ? "bg-indigo-600 font-semibold text-white shadow-lg shadow-indigo-600/20" 
-                        : "text-zinc-400 hover:text-white hover:bg-white/5"
-                    }`}
-                  >
-                    Asterisk & FreePBX
-                  </button>
-                  <button
-                    onClick={() => setSipTutorialTab("twilio")}
-                    className={`px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider transition cursor-pointer select-none ${
-                       sipTutorialTab === "twilio" 
-                        ? "bg-indigo-600 font-semibold text-white shadow-lg shadow-indigo-600/20" 
-                        : "text-zinc-400 hover:text-white hover:bg-white/5"
-                    }`}
-                  >
-                    Twilio SDK
-                  </button>
+            {/* PSTN / SIP Integration Hub */}
+            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 shadow-xl">
+              <div className="flex items-center gap-1.5 mb-3">
+                <span className="flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-widest text-zinc-500">
+                  <PhoneCall className="w-3 h-3 text-indigo-400" /> PSTN / SIP
+                </span>
+                <div className="flex gap-1 ml-auto">
+                  {(["sip","vobiz","asterisk","twilio"] as const).map((t) => (
+                    <button key={t} onClick={() => setSipTutorialTab(t)} className={`px-2.5 py-1 rounded-lg text-[9px] font-mono uppercase tracking-wider cursor-pointer transition ${sipTutorialTab === t ? "bg-indigo-600 text-white" : "text-zinc-400 hover:text-white hover:bg-white/5"}`}>
+                      {t === "sip" ? "Universal SIP" : t === "vobiz" ? "Vobiz" : t === "asterisk" ? "Asterisk" : "Twilio"}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* TAB CONTENT 1: UNIVERSAL SIP (Zadarma, Telnyx, Plivo, Callcentric, etc) */}
               {sipTutorialTab === "sip" && (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Step 1 */}
-                    <div className="bg-black/40 border border-white/5 rounded-2xl p-5 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="w-7 h-7 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-lg flex items-center justify-center font-mono text-xs font-bold">1</span>
-                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold">SIP TRUNK/DID</span>
-                      </div>
-                      <h4 className="text-xs font-bold tracking-wider uppercase font-mono text-zinc-200">Assign Phone Number</h4>
-                      <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
-                        Purchase or configure a standard DID phone line in any provider (e.g., <strong>Zadarma, Telnyx, Plivo, or VoIP.ms</strong>).
-                      </p>
-                    </div>
-
-                    {/* Step 2 */}
-                    <div className="bg-black/40 border border-white/5 rounded-2xl p-5 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="w-7 h-7 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-lg flex items-center justify-center font-mono text-xs font-bold">2</span>
-                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold">STREAM SETTINGS</span>
-                      </div>
-                      <h4 className="text-xs font-bold tracking-wider uppercase font-mono text-zinc-200">Set media stream URL</h4>
-                      <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
-                        In your carrier's Call Flow control editor, enable standard <strong>RTP Streaming / WebRTC Hook</strong> directed to our universal streaming gateway address.
-                      </p>
-                    </div>
-
-                    {/* Step 3 */}
-                    <div className="bg-black/40 border border-white/5 rounded-2xl p-5 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="w-7 h-7 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-lg flex items-center justify-center font-mono text-xs font-bold">3</span>
-                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold">TARGET MAPPING</span>
-                      </div>
-                      <h4 className="text-xs font-bold tracking-wider uppercase font-mono text-zinc-200">Lock AI Persona ID</h4>
-                      <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
-                        Pass the <code>?personaId={selectedPersona.id}</code> query parameter to route calls to the active agent <strong>{selectedPersona.name}</strong>.
-                      </p>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div className="bg-black/40 border border-white/5 rounded-xl p-3">
+                    <div className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">WebSocket URI</div>
+                    <code className="text-[10px] font-mono text-emerald-400 break-all">{(window.location.protocol === "https:" ? "wss:" : "ws:") + "//" + window.location.host + "/api/sip/live?personaId=" + selectedPersona.id}</code>
                   </div>
-
-                  {/* Active Universal SIP Connection config details */}
-                  <div className="bg-black/60 border border-white/5 rounded-2xl p-5 space-y-4">
-                    <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-indigo-400">Universal SIP Gateway Stream Configurations</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Sub-block A */}
-                      <div className="bg-black/50 border border-white/5 p-4 rounded-xl space-y-2">
-                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider block font-bold">A. Raw SIP WebSocket URI (WebRTC Streams)</span>
-                        <code className="text-[10px] md:text-xs font-mono text-emerald-400 bg-black/60 p-2 rounded-lg border border-white/5 block break-all">
-                          {window.location.protocol === "https:" ? "wss:" : "ws:"}//{window.location.host}/api/sip/live?personaId={selectedPersona.id}
-                        </code>
-                        <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
-                          Ideal for direct browser calling integrations using standard library handlers like <code>sip.js</code>, <code>JsSIP</code>, or raw SIP over VoIP gateways. Streams audio directly as G.711 μ-law.
-                        </p>
-                      </div>
-
-                      {/* Sub-block B */}
-                      <div className="bg-black/50 border border-white/5 p-4 rounded-xl space-y-2">
-                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider block font-bold">B. SIP call routing Webhook XML Address</span>
-                        <code className="text-[10px] md:text-xs font-mono text-orange-400 bg-black/60 p-2 rounded-lg border border-white/5 block break-all">
-                          {window.location.origin}/api/sip/incoming-call?personaId={selectedPersona.id}
-                        </code>
-                        <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
-                          Enter this in your Carrier's Incoming Webhook panel. For providers with XML stream builders (Zadarma, SignalWire, Plivo, Telnyx TeXML), this XML establishes the audio stream socket automatically.
-                        </p>
-                      </div>
-                    </div>
+                  <div className="bg-black/40 border border-white/5 rounded-xl p-3">
+                    <div className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Webhook XML</div>
+                    <code className="text-[10px] font-mono text-orange-400 break-all">{window.location.origin + "/api/sip/incoming-call?personaId=" + selectedPersona.id}</code>
                   </div>
                 </div>
               )}
 
-              {/* TAB CONTENT 4: VOBIZ CARRIER TRUNKING PLATFORM */}
               {sipTutorialTab === "vobiz" && (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Step 1 */}
-                    <div className="bg-black/40 border border-white/5 rounded-2xl p-5 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="w-7 h-7 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded-lg flex items-center justify-center font-mono text-xs font-bold">1</span>
-                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold">TRUNK CONFIG</span>
-                      </div>
-                      <h4 className="text-xs font-bold tracking-wider uppercase font-mono text-zinc-200">Trunk Naming</h4>
-                      <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
-                        In Vobiz portal, set the <strong>Trunk Name</strong> to <code>AI Voice Studio Outbound</code> to identify your bidirectional AI telephony bridge.
-                      </p>
-                    </div>
-
-                    {/* Step 2 */}
-                    <div className="bg-black/40 border border-white/5 rounded-2xl p-5 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="w-7 h-7 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded-lg flex items-center justify-center font-mono text-xs font-bold">2</span>
-                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold font-bold">WEBHOOK ENTRY</span>
-                      </div>
-                      <h4 className="text-xs font-bold tracking-wider uppercase font-mono text-zinc-200">Add Endpoint URL</h4>
-                      <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
-                        Under the <strong>Webhooks</strong> section, select <code>POST</code> and paste our secure live telecom webhook into the <strong>Endpoint URL</strong> input.
-                      </p>
-                    </div>
-
-                    {/* Step 3 */}
-                    <div className="bg-black/40 border border-white/5 rounded-2xl p-5 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="w-7 h-7 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded-lg flex items-center justify-center font-mono text-xs font-bold">3</span>
-                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold">CREDS & ACL</span>
-                      </div>
-                      <h4 className="text-xs font-bold tracking-wider uppercase font-mono text-zinc-200">Secure Trunk Credentials</h4>
-                      <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
-                        Click on <code>+ Create New Credential</code> to generate secure SIP username and passwords, or attach your private PBX trunk's **IP Access Control List**.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Vobiz Quick Setup Copy block */}
-                  <div className="bg-black/60 border border-white/5 rounded-2xl p-5 space-y-4">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-orange-400">
-                        Vobiz Webhook Live Integration Setup Parameters
-                      </h4>
-                      <span className="text-[9.5px] px-2 py-0.5 bg-orange-500/10 border border-orange-500/20 text-orange-400 font-mono tracking-widest uppercase rounded">
-                        VOBIZ INTEGRATION READY
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-sans">
-                      <div className="bg-black/50 border border-white/5 p-4 rounded-xl space-y-2">
-                        <span className="text-[9px] font-mono text-zinc-400 uppercase tracking-widest block font-bold">WEBHOOK ENDPOINT METHOD</span>
-                        <code className="text-xs font-mono text-emerald-400 block pb-1 border-b border-white/5">POST</code>
-                        <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
-                          Vobiz will issue standard HTTP POST status updates and request routing configurations via this protocol callback method.
-                        </p>
-                      </div>
-
-                      <div className="bg-black/50 border border-white/5 p-4 rounded-xl space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[9px] font-mono text-zinc-400 uppercase tracking-widest block font-bold">VOBIZ ENDPOINT WEBHOOK URL</span>
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(`${window.location.origin}/api/twilio/incoming-call?personaId=${selectedPersona.id}`);
-                              alert("Vobiz Endpoint Webhook URL copied successfully!");
-                            }}
-                            className="text-[9px] font-mono text-orange-400 hover:underline cursor-pointer select-none"
-                          >
-                            Copy Url
-                          </button>
-                        </div>
-                        <code className="text-[10px] md:text-xs font-mono text-orange-400 bg-black/60 p-2 rounded-lg border border-white/5 block break-all">
-                          {window.location.origin}/api/twilio/incoming-call?personaId={selectedPersona.id}
-                        </code>
-                        <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
-                          Paste this exact target URL inside the <strong>Endpoint URL</strong> field in your Vobiz console to connect <strong>{selectedPersona.name} ({selectedPersona.role})</strong>.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="border-t border-white/5 pt-4">
-                      <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
-                        💡 <strong>Call Recording & AI Transcription Setting:</strong> The Vobiz screen has checkboxes for *Call Recording* and *AI Transcription*. Feel free to toggle them according to your preferences. Since our AI Voice Studio processes natural language stream inputs in real-time, additional provider transcription is not strictly required but acts as an excellent historical audit-log.
-                      </p>
-                    </div>
-                  </div>
+                <div className="bg-black/40 border border-white/5 rounded-xl p-3">
+                  <div className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Vobiz Webhook URL</div>
+                  <code className="text-[10px] font-mono text-orange-400 break-all">{window.location.origin + "/api/twilio/incoming-call?personaId=" + selectedPersona.id}</code>
                 </div>
               )}
 
-              {/* TAB CONTENT 2: ASTERISK & FREEPBX IP-PBX PRIVATE TRUNKS */}
               {sipTutorialTab === "asterisk" && (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Step 1 */}
-                    <div className="bg-black/40 border border-white/5 rounded-2xl p-5 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="w-7 h-7 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-lg flex items-center justify-center font-mono text-xs font-bold">1</span>
-                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold">SIP DOT CONF</span>
-                      </div>
-                      <h4 className="text-xs font-bold tracking-wider uppercase font-mono text-zinc-200">Register Trunk</h4>
-                      <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
-                        In Asterisk (or FreePBX Custom Trunk), set up your inbound register context pointing to the standard incoming number trunk.
-                      </p>
-                    </div>
-
-                    {/* Step 2 */}
-                    <div className="bg-black/40 border border-white/5 rounded-2xl p-5 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="w-7 h-7 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-lg flex items-center justify-center font-mono text-xs font-bold">2</span>
-                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold">EXTENSIONS.CONF</span>
-                      </div>
-                      <h4 className="text-xs font-bold tracking-wider uppercase font-mono text-zinc-200">Add Dialplan Rule</h4>
-                      <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
-                        Insert a custom Asterisk dialplan rule to catch incoming calls and launch the Audiosocket / WebRTC stream link.
-                      </p>
-                    </div>
-
-                    {/* Step 3 */}
-                    <div className="bg-black/40 border border-white/5 rounded-2xl p-5 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="w-7 h-7 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-lg flex items-center justify-center font-mono text-xs font-bold">3</span>
-                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold">EAGI/AUDIOSOCKET</span>
-                      </div>
-                      <h4 className="text-xs font-bold tracking-wider uppercase font-mono text-zinc-200">Deploy WS Bridge</h4>
-                      <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
-                        Asterisk interfaces use <code>EAGI</code> or Audiosocket loops to pipe G.711 stream bytes straight into our WebSocket port 3000!
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Code snippet block */}
-                  <div className="bg-black/60 border border-white/5 rounded-2xl p-5 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-indigo-400">Asterisk / FreePBX Dialplan Instruction Code (extensions.conf)</h4>
-                      <span className="text-[9px] font-mono text-zinc-500">Copy Dialplan Script</span>
-                    </div>
-                    <pre className="text-[10px] md:text-sm font-mono text-zinc-300 bg-black/80 p-4 rounded-xl border border-white/5 overflow-x-auto leading-relaxed max-h-48 overflow-y-auto">
-{`; ====== Asterisk Inbound SIP to AI Voice Studio Dialplan Rule ======
-[from-sip-trunk]
-exten => _X.,1,NoOp("Incoming Call routed to AI Voice Agent: ${selectedPersona.name}")
- same => n,Answer()
- same => n,Playback(connecting-studio)
- ; Dial standard G.711 mu-law bridge over WebSocket
+                <div>
+                  <div className="bg-black/40 border border-white/5 rounded-xl p-3 mb-2">
+                    <div className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Dialplan (extensions.conf)</div>
+                    <pre className="text-[10px] font-mono text-zinc-300 bg-black/60 p-2 rounded-lg border border-white/5 overflow-x-auto max-h-24">
+{`[from-sip-trunk]
+exten => _X.,1,Answer()
  same => n,Jack(connect-stream,url=wss://${window.location.host}/api/sip/live?personaId=${selectedPersona.id})
- same => n,Hangup()
-`}
+ same => n,Hangup()`}
                     </pre>
-                    <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
-                      By streaming Asterisk calls via the <code>JACK</code> or <code>AudioSocket</code> modules, Asterisk transcodes raw SIP audio on-the-fly to G.711 μ-law and updates our high-speed socket handler synchronously.
-                    </p>
                   </div>
                 </div>
               )}
 
-              {/* TAB CONTENT 3: TWILIO SDK */}
               {sipTutorialTab === "twilio" && (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Step 1 */}
-                    <div className="bg-black/40 border border-white/5 rounded-2xl p-5 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="w-7 h-7 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-lg flex items-center justify-center font-mono text-xs font-bold">1</span>
-                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold">TWILIO PORTAL</span>
-                      </div>
-                      <h4 className="text-xs font-bold tracking-wider uppercase font-mono text-zinc-200">Rent a Number</h4>
-                      <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
-                        Acquire a virtual phone number in your Twilio account console. Or use an existing SIP domain configuration.
-                      </p>
-                    </div>
-
-                    {/* Step 2 */}
-                    <div className="bg-black/40 border border-white/5 rounded-2xl p-5 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="w-7 h-7 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-lg flex items-center justify-center font-mono text-xs font-bold">2</span>
-                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold">WEBHOOK TRUNK</span>
-                      </div>
-                      <h4 className="text-xs font-bold tracking-wider uppercase font-mono text-zinc-200">Configure Webhook</h4>
-                      <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
-                        In Twilio voice configuration page, set <strong>A call comes in</strong> callback target URI to the XML webhook endpoint.
-                      </p>
-                    </div>
-
-                    {/* Step 3 */}
-                    <div className="bg-black/40 border border-white/5 rounded-2xl p-5 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="w-7 h-7 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-lg flex items-center justify-center font-mono text-xs font-bold">3</span>
-                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold">MEDIA STREAMS</span>
-                      </div>
-                      <h4 className="text-xs font-bold tracking-wider uppercase font-mono text-zinc-200">Bidirectional WS</h4>
-                      <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
-                        Upon receiving a call, Twilio establishes a WebSocket connection to stream bidirectional voice packets in actual μ-law.
-                      </p>
-                    </div>
+                <div className="bg-black/40 border border-white/5 rounded-xl p-3 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Twilio Webhook</div>
+                    <code className="text-[10px] font-mono text-orange-400 break-all">{window.location.origin + "/api/twilio/incoming-call?personaId=" + selectedPersona.id}</code>
                   </div>
-
-                  {/* Webhook Endpoint block with copy link */}
-                  <div className="bg-black/50 border border-white/5 p-4 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-[0.2em] block font-bold">Your Custom Twilio Voice Webhook Endpoint</span>
-                      <code className="text-[10px] md:text-sm font-mono text-orange-400 bg-black/60 px-3 py-1.5 rounded-lg border border-white/5 block break-all">
-                        {window.location.origin}/api/twilio/incoming-call?personaId={selectedPersona.id}
-                      </code>
-                    </div>
-                    <div className="shrink-0 flex items-center gap-2">
-                      <span className="px-2.5 py-1.5 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-mono uppercase tracking-widest font-bold">
-                        PSTN Live
-                      </span>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(`${window.location.origin}/api/twilio/incoming-call?personaId=${selectedPersona.id}`);
-                          alert("Twilio callback phone webhook URL successfully copied to clipboard.");
-                        }}
-                        className="px-4 py-2 border border-white/10 hover:bg-white/5 text-zinc-300 hover:text-white rounded-xl text-[10px] font-mono uppercase tracking-widest cursor-pointer transition select-none"
-                      >
-                        Copy Hook
-                      </button>
-                    </div>
-                  </div>
+                  <button onClick={() => { navigator.clipboard.writeText(window.location.origin + "/api/twilio/incoming-call?personaId=" + selectedPersona.id); }} className="shrink-0 px-3 py-1.5 border border-white/10 hover:bg-white/5 text-zinc-300 hover:text-white rounded-lg text-[9px] font-mono uppercase tracking-widest cursor-pointer transition">Copy</button>
                 </div>
               )}
             </div>
