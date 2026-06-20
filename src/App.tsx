@@ -670,7 +670,7 @@ export default function App() {
       <DashboardLayout activePage={activePage} onNavigate={(page) => navigate("/" + page)} callActive={callState === "connected"}>
         {/* 1. DASHBOARD HOME */}
         {activePage === "dashboard" && (
-          <DashboardHome onPlaceCall={handleDialNumber} />
+          <DashboardHome />
         )}
 
         {/* 2. AGENT DIRECTORY (original dashboard + list) */}

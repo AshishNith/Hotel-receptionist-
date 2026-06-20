@@ -29,17 +29,20 @@ export async function generateCallSummary(callId: string): Promise<string> {
 
     // 3. Formulate the summarization prompt
     const prompt = `
-You are a highly efficient assistant for a premium hotel. Review the phone call transcript below between a Hotel AI Receptionist ("AGENT") and a guest/caller ("USER").
+You are a highly efficient assistant for a premium DTC and e-commerce brand. Review the phone call transcript below between a Store AI Calling Agent ("AGENT") and a customer/caller ("USER").
 Generate a concise, professional summary formatted with clear headers and bullet points.
 
 Requirements:
-1. Topic: Briefly state what the main focus of the call was (e.g., Room Booking, Room Availability Check, Food Order, Hotel Policy inquiry, Booking Confirmation).
-2. Key Details: Bullet-point the crucial details discussed (such as dates, room types, guest name, phone, email, food items, total price, specific hotel FAQ answers).
-3. Outcome: State the final result of the call in one clear line (e.g., "Successfully reserved room BK-1234", "Food ordered successfully", "Answered pool timings inquiry", "Call hung up during discussion").
-4. Guest operational status (Mandatory for booking confirmation calls): If this call was a booking confirmation call, you MUST explicitly output a line containing:
-   "GUEST_STATUS: Confirmed" (if they explicitly stated they are coming and plan to check in)
-   "GUEST_STATUS: Cancelled" (if they explicitly requested a cancellation or stated they are not coming)
-   "GUEST_STATUS: Uncertain" (if they did not give a clear confirmation, were unreachable, or call hung up before they answered)
+1. Topic: Briefly state what the main focus of the call was (e.g., COD Order Confirmation, Abandoned Cart Recovery, Delivery Feedback, Order tracking inquiry).
+2. Key Details: Bullet-point the crucial details discussed (such as Order ID/Cart ID, items, prices, shipping address, discount code, rating, or delivery slot).
+3. Outcome: State the final result of the call in one clear line (e.g., "COD Order OD-4821 confirmed successfully", "Abandoned cart recovered with code SAVE10", "Feedback captured: rating 5/5", "Frustration escalated to live agent").
+4. Customer operational status: Output a line containing:
+   "ORDER_STATUS: Confirmed" (if they explicitly confirmed their COD order)
+   "ORDER_STATUS: Cancelled" (if they cancelled their COD order)
+   "CART_STATUS: Recovered" (if they accepted the recovery discount coupon)
+   "DELIVERY_STATUS: Re-attempt" (if they scheduled redelivery)
+   "ESC_STATUS: Escalated" (if transfer to live agent was requested)
+   "STATUS: Uncertain" (if call hung up early or was busy/no-answer)
 
 Keep the tone polished, objective, and highly readable. Avoid meta-commentary or generic introductory phrases.
 
@@ -64,62 +67,74 @@ ${transcriptText}
     
     logToFile(`[Summary Service] Successfully saved summary for call ${callId} to MongoDB!`);
 
-    // 6. Sync to Google Sheets and local CSV if reservation was made or updated during this call
+    // 6. Sync to Google Sheets and local CSV if order/cart was updated during this call
     try {
-      const bookingToolCalls = call.toolCallsUsed.filter(
-        (tc) => tc.name === "makeRoomReservation" && tc.result?.success && tc.result?.bookingId
-      );
+      let resolvedOrderId: string | null = null;
+      let resolvedCartId: string | null = null;
+      let orderStatusUpdate: string | null = null;
+      let cartStatusUpdate: string | null = null;
 
-      let confirmationBookingId: string | null = null;
-      let bookingStatusUpdate: string | null = null;
-
-      if (summaryText.includes("GUEST_STATUS: Confirmed")) {
-        bookingStatusUpdate = "Confirmed";
-      } else if (summaryText.includes("GUEST_STATUS: Cancelled")) {
-        bookingStatusUpdate = "Cancelled";
+      // Check tool calls
+      const confirmToolCall = call.toolCallsUsed.find(tc => tc.name === "confirm_cod_order" && tc.args?.orderId);
+      if (confirmToolCall) {
+        resolvedOrderId = confirmToolCall.args.orderId;
+        orderStatusUpdate = confirmToolCall.result?.status || (confirmToolCall.args.confirmed ? "COD Confirmed" : "COD Cancelled");
       }
 
-      // If call is outbound and callerNumber represents outbound dialer
-      const isOutboundCall = call.callerNumber === "outbound" || call.direction === "outbound";
-      if (isOutboundCall) {
-        const cancelToolCall = call.toolCallsUsed.find(tc => tc.name === "modify_or_cancel_reservation" && tc.args?.bookingId);
-        if (cancelToolCall) {
-          confirmationBookingId = cancelToolCall.args.bookingId;
-        }
+      const verifyAddressToolCall = call.toolCallsUsed.find(tc => tc.name === "verify_shipping_address" && tc.args?.orderId);
+      if (verifyAddressToolCall) {
+        resolvedOrderId = verifyAddressToolCall.args.orderId;
       }
 
-      const appUrl = process.env.APP_URL || "https://hotel-receptionist-agent.onrender.com";
+      const discountToolCall = call.toolCallsUsed.find(tc => tc.name === "apply_cart_discount" && tc.args?.cartId);
+      if (discountToolCall) {
+        resolvedCartId = discountToolCall.args.cartId;
+        cartStatusUpdate = "Recovered";
+      }
+
+      const scheduleRedeliveryToolCall = call.toolCallsUsed.find(tc => tc.name === "schedule_redelivery" && tc.args?.orderId);
+      if (scheduleRedeliveryToolCall) {
+        resolvedOrderId = scheduleRedeliveryToolCall.args.orderId;
+        orderStatusUpdate = "Re-attempt Scheduled";
+      }
+
+      // Parse status updates from summary tags
+      if (summaryText.includes("ORDER_STATUS: Confirmed")) {
+        orderStatusUpdate = "COD Confirmed";
+      } else if (summaryText.includes("ORDER_STATUS: Cancelled")) {
+        orderStatusUpdate = "COD Cancelled";
+      } else if (summaryText.includes("CART_STATUS: Recovered")) {
+        cartStatusUpdate = "Recovered";
+      } else if (summaryText.includes("DELIVERY_STATUS: Re-attempt")) {
+        orderStatusUpdate = "Re-attempt Scheduled";
+      }
+
+      // Regex fallbacks to extract ID from transcript
+      const transcriptTextCombined = call.transcript.map(t => t.text).join(" ");
+      if (!resolvedOrderId) {
+        const match = transcriptTextCombined.match(/OD-\d{4}/i);
+        if (match) resolvedOrderId = match[0].toUpperCase();
+      }
+      if (!resolvedCartId) {
+        const match = transcriptTextCombined.match(/CRT-\d{4}/i);
+        if (match) resolvedCartId = match[0].toUpperCase();
+      }
+
+      const appUrl = process.env.APP_URL || "https://ecom-calling-agent.onrender.com";
       const absoluteRecordingUrl = call.recordingUrl ? `${appUrl.replace(/\/$/, "")}${call.recordingUrl}` : "";
 
-      const { updateBookingWithCallSummary } = await import("./hotelService.js");
+      const { updateOrderWithCallSummary, updateCartWithCallSummary } = await import("./ecommerceService.js");
 
-      // A. Sync new room bookings
-      if (bookingToolCalls.length > 0) {
-        logToFile(`[Summary Service] Found ${bookingToolCalls.length} new booking(s) in call ${callId}. Syncing summary...`);
-        for (const tc of bookingToolCalls) {
-          const bId = tc.result.bookingId;
-          await updateBookingWithCallSummary(bId, summaryText, absoluteRecordingUrl);
-        }
+      if (resolvedOrderId && !resolvedOrderId.toUpperCase().startsWith("DEMO-")) {
+        logToFile(`[Summary Service] Syncing call summary for order: ${resolvedOrderId}, Status: ${orderStatusUpdate}`);
+        await updateOrderWithCallSummary(resolvedOrderId, summaryText, absoluteRecordingUrl, orderStatusUpdate || undefined);
       }
-
-      // B. Sync confirmation call updates
-      const targetBookingId = confirmationBookingId || call.toolCallsUsed.find(tc => tc.name === "modify_or_cancel_reservation" && tc.args?.bookingId)?.args?.bookingId;
-      
-      if (targetBookingId && bookingStatusUpdate) {
-        logToFile(`[Summary Service] Confirmation resolved status: ${bookingStatusUpdate} for booking: ${targetBookingId}. Updating Sheet...`);
-        await updateBookingWithCallSummary(targetBookingId, summaryText, absoluteRecordingUrl, bookingStatusUpdate);
-      } else if (bookingStatusUpdate) {
-        // Fallback: Scan transcript for Booking ID (BK-XXXX) matching patterns
-        const transcriptTextCombined = call.transcript.map(t => t.text).join(" ");
-        const match = transcriptTextCombined.match(/BK-\d{4}/i);
-        if (match) {
-          const matchedBookingId = match[0].toUpperCase();
-          logToFile(`[Summary Service] Found booking ID ${matchedBookingId} in transcript. Status resolved: ${bookingStatusUpdate}. Updating Sheet...`);
-          await updateBookingWithCallSummary(matchedBookingId, summaryText, absoluteRecordingUrl, bookingStatusUpdate);
-        }
+      if (resolvedCartId && !resolvedCartId.toUpperCase().startsWith("DEMO-")) {
+        logToFile(`[Summary Service] Syncing call summary for cart: ${resolvedCartId}, Status: ${cartStatusUpdate}`);
+        await updateCartWithCallSummary(resolvedCartId, summaryText, absoluteRecordingUrl, cartStatusUpdate || undefined);
       }
     } catch (syncErr: any) {
-      logToFile(`[Summary Service] Failed to synchronize booking with call summary: ${syncErr?.message || syncErr}`);
+      logToFile(`[Summary Service] Failed to synchronize order/cart with call summary: ${syncErr?.message || syncErr}`);
     }
 
     return summaryText;

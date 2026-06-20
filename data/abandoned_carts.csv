@@ -1,0 +1,4 @@
+CartID,CustomerName,Phone,Email,CartValue,Status,Items,CallSummary,CallRecordingUrl,DiscountApplied,RetryCount,NextRetryTime
+CRT-9016,Ashish Ranjan,9934225353,ashish@example.com,1899,Abandoned,"Oversized Cotton Hoodie - Black / M (x1)",,,,0,
+CRT-7279,Rohan Das,9934225353,rohan@example.com,2999,Abandoned,"Premium Slim-Fit Denim Jacket - Blue / L (x1); Pima Cotton Crewneck Tee - White / L (x2)",,,,0,
+CRT-3341,Sneha Gupta,8888888888,sneha@example.com,999,Recovered,"Linen Summer Dress - Sage / S (x1)",,,10% Off,,0,

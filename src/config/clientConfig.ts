@@ -54,14 +54,14 @@ export interface ClientConfig {
 
 const clientConfig: ClientConfig = {
   brand: {
-    name: "GoRan",
-    tagline: "AI Voice Platform",
-    logoInitials: "GR",
+    name: "VoiceLink",
+    tagline: "DTC Call Automation & COD Confirmation",
+    logoInitials: "VL",
     logoUrl: "https://res.cloudinary.com/dvwpxb2oa/image/upload/v1781609580/Full_Logo_neu1ij.png",
-    accentColor: "#2563eb",           // blue-600
-    accentColorLight: "#3b82f6",      // blue-500
-    accentGradientFrom: "#2563eb",    // blue-600
-    accentGradientTo: "#1d4ed8",      // blue-700
+    accentColor: "#4f46e5",           // indigo-600
+    accentColorLight: "#6366f1",      // indigo-500
+    accentGradientFrom: "#4f46e5",    // indigo-600
+    accentGradientTo: "#3730a3",      // indigo-800
     sidebarBg: "#ffffff",
     sidebarBorder: "#e4e4e7",
   },
@@ -80,13 +80,13 @@ const clientConfig: ClientConfig = {
   },
   credits: {
     total: 1000000,
-    used: 0,
+    used: 2450,
     label: "CREDITS",
   },
   user: {
-    name: "Admin",
-    email: "admin@goran.ai",
-    role: "Manager",
+    name: "DTC Founder",
+    email: "founder@brand.com",
+    role: "Administrator",
   },
 };
 

@@ -52,97 +52,101 @@ export async function getCompiledSystemInstruction(
   }
 }
 
-export const hotelRoomTools: FunctionDeclaration[] = [
+export const ecommerceTools: FunctionDeclaration[] = [
   {
-    name: "check_room_availability",
-    description: "Queries the hotel database for available rooms based on dates, guest count, and optional room type preference.",
+    name: "confirm_cod_order",
+    description: "Confirms or cancels a Cash on Delivery (COD) order based on the customer's response.",
     parametersJsonSchema: {
       type: Type.OBJECT,
       properties: {
-        startDate: { type: Type.STRING, description: "Check-in date in YYYY-MM-DD format (e.g. '2026-06-01')" },
-        endDate: { type: Type.STRING, description: "Check-out date in YYYY-MM-DD format (e.g. '2026-06-03')" },
-        guestCount: { type: Type.INTEGER, description: "Total number of guests staying" },
-        roomTypePreference: { type: Type.STRING, description: "Optional preferred room type: 'deluxe', 'executive', or 'presidential'" }
+        orderId: { type: Type.STRING, description: "The ID of the order being confirmed (e.g., 'OD-4821')" },
+        confirmed: { type: Type.BOOLEAN, description: "Set to true if the customer confirmed their order, false if they wish to cancel it" },
+        reason: { type: Type.STRING, description: "Optional explanation provided by the customer for confirmation or cancellation" }
       },
-      required: ["startDate", "endDate", "guestCount"]
+      required: ["orderId", "confirmed"]
     }
   },
   {
-    name: "make_room_reservation",
-    description: "Collects guest details, calculates pricing, and books a room in the hotel database, returning a reservation/booking ID.",
+    name: "verify_shipping_address",
+    description: "Verifies the correctness of the customer's shipping address or records corrections.",
     parametersJsonSchema: {
       type: Type.OBJECT,
       properties: {
-        name: { type: Type.STRING, description: "Full name of the guest making the reservation" },
-        phone: { type: Type.STRING, description: "Phone number of the guest" },
-        email: { type: Type.STRING, description: "Email address of the guest" },
-        roomType: { type: Type.STRING, description: "Room type to book: 'deluxe', 'executive', or 'presidential'" },
-        checkIn: { type: Type.STRING, description: "Check-in date in YYYY-MM-DD format" },
-        checkOut: { type: Type.STRING, description: "Check-out date in YYYY-MM-DD format" },
-        guests: { type: Type.INTEGER, description: "Number of guests" },
-        addons: {
-          type: Type.ARRAY,
-          items: { type: Type.STRING },
-          description: "List of optional add-ons to select. Supported: 'breakfast' (Rs. 300/guest/night), 'spa' (Rs. 1500 flat), 'early-check-in' (Rs. 1000 flat)."
-        }
+        orderId: { type: Type.STRING, description: "The ID of the order being verified" },
+        correctedAddress: { type: Type.STRING, description: "The updated/corrected address string if the customer requested modifications" },
+        isCorrect: { type: Type.BOOLEAN, description: "Set to true if the address is confirmed correct (either immediately or after corrections), false if unreachable" }
       },
-      required: ["name", "phone", "email", "roomType", "checkIn", "checkOut", "guests"]
+      required: ["orderId", "isCorrect"]
     }
   },
   {
-    name: "modify_or_cancel_reservation",
-    description: "Modifies reservation details or cancels an existing booking, using the Booking ID and guest phone number to authenticate.",
+    name: "apply_cart_discount",
+    description: "Applies a promotional recovery discount code to the customer's abandoned checkout cart.",
     parametersJsonSchema: {
       type: Type.OBJECT,
       properties: {
-        bookingId: { type: Type.STRING, description: "The Reservation/Booking ID (e.g. 'BK-5423')" },
-        phone: { type: Type.STRING, description: "Guest phone number registered with the booking" },
-        action: { type: Type.STRING, description: "Operation to execute: 'modify' or 'cancel'" },
-        updates: {
-          type: Type.OBJECT,
-          description: "Required only if action is 'modify'. Details of variables to update.",
-          properties: {
-            newCheckIn: { type: Type.STRING, description: "Updated check-in date in YYYY-MM-DD format" },
-            newCheckOut: { type: Type.STRING, description: "Updated check-out date in YYYY-MM-DD format" },
-            newRoomType: { type: Type.STRING, description: "Updated room type: 'deluxe', 'executive', or 'presidential'" },
-            newGuests: { type: Type.INTEGER, description: "Updated guest count" },
-            newAddons: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Updated add-ons list" }
-          }
-        }
+        cartId: { type: Type.STRING, description: "The ID of the abandoned cart (e.g., 'CRT-9016')" },
+        discountCode: { type: Type.STRING, description: "The discount coupon code to apply (e.g. 'SAVE10', 'DTC10')" },
+        discountValue: { type: Type.INTEGER, description: "The percentage discount value (e.g., 10 for 10% off)" }
       },
-      required: ["bookingId", "phone", "action"]
+      required: ["cartId", "discountCode", "discountValue"]
     }
   },
   {
-    name: "order_food",
-    description: "Orders items from the hotel restaurant menu for a specific room or booking, calculating pricing and appending order details.",
+    name: "schedule_redelivery",
+    description: "Schedules a redelivery date and time slot for a non-delivered report (NDR) shipment.",
     parametersJsonSchema: {
       type: Type.OBJECT,
       properties: {
-        bookingIdOrRoom: { type: Type.STRING, description: "The guest's Booking ID or Room number (e.g. 'Room 302' or 'BK-1234')" },
-        items: {
-          type: Type.ARRAY,
-          description: "List of items ordered with quantities",
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              itemId: { type: Type.STRING, description: "Item identifier: 'sandwich', 'paneer', 'biryani', 'pizza', 'naan', 'coffee'" },
-              quantity: { type: Type.INTEGER, description: "Quantity of this item to order" }
-            },
-            required: ["itemId", "quantity"]
-          }
-        }
+        orderId: { type: Type.STRING, description: "The ID of the order requiring redelivery" },
+        reattemptDate: { type: Type.STRING, description: "The requested date for redelivery re-attempt in YYYY-MM-DD format" },
+        reattemptTimeSlot: { type: Type.STRING, description: "The preferred time slot (e.g., 'morning', 'afternoon', 'evening')" }
       },
-      required: ["bookingIdOrRoom", "items"]
+      required: ["orderId", "reattemptDate", "reattemptTimeSlot"]
     }
   },
   {
-    name: "get_hotel_faq",
-    description: "Queries the hotel policy database/FAQ knowledge base to answer questions regarding check-in times, Wi-Fi passwords, parking, pool hours, etc.",
+    name: "record_delivery_feedback",
+    description: "Records the customer's verbal feedback rating and satisfaction comments post-delivery.",
     parametersJsonSchema: {
       type: Type.OBJECT,
       properties: {
-        query: { type: Type.STRING, description: "Search query or question (e.g. 'pool timings', 'is parking free')" }
+        orderId: { type: Type.STRING, description: "The ID of the delivered order" },
+        rating: { type: Type.INTEGER, description: "Customer satisfaction rating on a scale of 1 to 5" },
+        comments: { type: Type.STRING, description: "Any verbal comments or feedback provided by the customer" }
+      },
+      required: ["orderId", "rating"]
+    }
+  },
+  {
+    name: "track_order_shipment",
+    description: "Retrieves live shipping tracking information, estimated delivery dates, and courier partner details for an order.",
+    parametersJsonSchema: {
+      type: Type.OBJECT,
+      properties: {
+        orderId: { type: Type.STRING, description: "The ID of the order to track" }
+      },
+      required: ["orderId"]
+    }
+  },
+  {
+    name: "escalate_to_human",
+    description: "Escalates the call and requests transfer to a live support agent when high frustration or complex queries are encountered.",
+    parametersJsonSchema: {
+      type: Type.OBJECT,
+      properties: {
+        reason: { type: Type.STRING, description: "The reason for escalating the call to a human agent" }
+      },
+      required: ["reason"]
+    }
+  },
+  {
+    name: "get_store_faq",
+    description: "Queries the store FAQ knowledge base to answer customer questions regarding returns, shipping fees, delivery times, warranty, etc.",
+    parametersJsonSchema: {
+      type: Type.OBJECT,
+      properties: {
+        query: { type: Type.STRING, description: "The search query or question asked by the customer" }
       },
       required: ["query"]
     }
@@ -200,7 +204,7 @@ export const googleWorkspaceTools: FunctionDeclaration[] = [
 ];
 
 export const allToolDeclarations: FunctionDeclaration[] = [
-  ...hotelRoomTools,
+  ...ecommerceTools,
   ...googleWorkspaceTools,
 ];
 

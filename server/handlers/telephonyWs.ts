@@ -26,7 +26,7 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
 
   logToFile(`[${providerName} WS] Connection initiated. Path: ${upgradeUrl.pathname}, Query: ${upgradeUrl.search}`);
 
-  const personaId = upgradeUrl.searchParams.get("personaId") || "diya";
+  const personaId = upgradeUrl.searchParams.get("personaId") || "cod_confirm";
   const callerNumber = decodeURIComponent(upgradeUrl.searchParams.get("callerNumber") || "");
   const outboundCallId = upgradeUrl.searchParams.get("callId") || "";
   const direction = (upgradeUrl.searchParams.get("direction") || "inbound") as "inbound" | "outbound";
@@ -87,40 +87,90 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
     const baseInstruction = persona.systemInstruction || "You are a helpful calling agent.";
     const compiledInstruction = await getCompiledSystemInstruction(baseInstruction, persona.knowledgeBaseId);
     
-    let customBookingInstruction = "";
-    if (bookingId) {
-      try {
-        const { getBookingDetails } = await import("../services/hotelService.js");
-        const booking = await getBookingDetails(bookingId);
-        if (booking) {
-          logToFile(`[${providerName} WS] Found booking confirmation context for ${booking.bookingId} (${booking.name})! Injected instruction.`);
-          customBookingInstruction = `\n\n### CRITICAL CALL OUTBOUND MISSION: BOOKING CONFIRMATION
-You are actively calling the guest ${booking.name} on their phone number to confirm their upcoming room reservation.
-Booking ID: ${booking.bookingId}
-Check-In Date: ${booking.checkIn}
-Check-Out Date: ${booking.checkOut}
-Room Booked: ${booking.roomType}
-Total Price: Rs. ${booking.totalPrice}
-Current Status: ${booking.status}
+    let customEcommerceInstruction = "";
+    try {
+      const { getOrderDetails, getCartDetails } = await import("../services/ecommerceService.js");
+      let order = null;
+      let cart = null;
+      let isDemoCall = false;
+
+      if (bookingId) {
+        if (bookingId.startsWith("DEMO-") || bookingId === "demo") {
+          isDemoCall = true;
+        } else {
+          order = await getOrderDetails(bookingId);
+          if (!order) {
+            cart = await getCartDetails(bookingId);
+          }
+        }
+      } else if (direction === "outbound") {
+        isDemoCall = true;
+      }
+
+      if (isDemoCall) {
+        logToFile(`[${providerName} WS] Running in DEMO MODE. Injected Shruti demo order context.`);
+        order = {
+          orderId: "DEMO-1001",
+          customerName: "Shruti",
+          orderValue: 1499,
+          paymentMethod: "COD",
+          shippingAddress: "Flat 402, Royal Palms, Sector 62, Noida, UP - 201301",
+          phone: callerNumber || "+91 99342-DEMO",
+          email: "shruti@example.com"
+        };
+      }
+
+      if (order) {
+        logToFile(`[${providerName} WS] Found order confirmation context for ${order.orderId} (${order.customerName})! Injected instruction.`);
+        customEcommerceInstruction = `\n\n### CRITICAL CALL OUTBOUND MISSION: ORDER CONFIRMATION & ADDRESS VERIFICATION
+You are Via, the dedicated Cash on Delivery (COD) Confirmation and Address Verification Agent for VeloCart. You are actively calling the customer ${order.customerName} on their phone number to confirm their recent Cash on Delivery order.
+Order ID: ${order.orderId}
+Customer Name: ${order.customerName}
+Order Value: Rs. ${order.orderValue}
+Payment Method: ${order.paymentMethod}
+Shipping Address: ${order.shippingAddress}
 
 Your strict conversational goal:
-1. Warmly greet the guest by their name (${booking.name}) and state you are calling from the Grand Imperial Hotel to confirm their reservation checking in tomorrow (${booking.checkIn}).
-2. Ask them if they are still planning to arrive and check in tomorrow as scheduled.
-3. If they confirm they are coming (Yes/Planning to check in):
-   - Thank them warmly, let them know we are excited to welcome them, and state that their reservation is now fully confirmed.
-   - Reassure them that you've updated their booking status to Confirmed.
-4. If they wish to cancel (No/Not coming):
-   - Politely acknowledge their cancellation, state that you will cancel the reservation for them immediately, and wish them well.
-   - You MUST immediately execute the \`modify_or_cancel_reservation\` tool call with action="cancel" and bookingId="${booking.bookingId}" to cancel the booking immediately during the call!
-5. Keep the conversation extremely natural, warm, and highly efficient.
+1. Greet the customer professionally in Hindi: "नमस्ते, मैं VeloCart से वाया बात कर रही हूँ। क्या मेरी बात ${order.customerName} से हो रही है?" Keep the tone professional, polite, direct, and concise (not overly friendly or warm). Speak in Hindi.
+2. If they confirm they are the customer, state the order confirmation details (items, value of Rs. ${order.orderValue}).
+3. Ask if they wish to confirm their order.
+4. Verify their shipping address by asking exactly in Hindi: "यह आपके आर्डर का डिलीवरी पता है। क्या मैं इसे इसी तरह कन्फर्म कर दूँ?"
+5. If they confirm the address is correct as read, call the \`verify_shipping_address\` tool with isCorrect=true. Then call the \`confirm_cod_order\` tool with confirmed=true. Thank them professionally and end the call.
+6. If they have address corrections, collect the corrected address and call the \`verify_shipping_address\` tool with isCorrect=true and correctedAddress. Then call the \`confirm_cod_order\` tool with confirmed=true. Thank them and end the call.
+7. If they cancel the order (No/Not planning to buy):
+   - Politely ask for the cancellation reason.
+   - Call the \`confirm_cod_order\` tool with confirmed=false and the reason.
+   - Acknowledge the cancellation professionally and end the call.
+8. Prioritize Hindi for the entire call. Keep statements clear and business-like.
+`;
+      } else {
+        const cart = await getCartDetails(bookingId);
+        if (cart) {
+          logToFile(`[${providerName} WS] Found cart recovery context for ${cart.cartId} (${cart.customerName})! Injected instruction.`);
+          customEcommerceInstruction = `\n\n### CRITICAL CALL OUTBOUND MISSION: ABANDONED CART RECOVERY
+You are calling the customer ${cart.customerName} to help them complete their abandoned checkout at VeloCart.
+Cart ID: ${cart.cartId}
+Items: ${cart.items}
+Cart Value: Rs. ${cart.cartValue}
+
+Your strict conversational goal:
+1. Greet the customer and mention they left items (${cart.items}) in their shopping cart.
+2. Politely inquire if there was any issue that prevented them from finishing checkout.
+3. Address their objections (free shipping above ₹999, free returns for 15 days).
+4. Offer them a 10% discount coupon 'SAVE10' to complete the order today.
+5. If they accept:
+   - Call \`apply_cart_discount\` with cartId="${cart.cartId}", discountCode="SAVE10", and discountValue=10.
+   - Reassure them that the discount is applied, and a checkout link is being sent to their number.
+6. If they decline:
+   - Acknowledge politely and thank them for their time.
 `;
         }
-      } catch (err: any) {
-        logToFile(`[${providerName} WS] Error loading booking details for confirmation instruction: ${err?.message || err}`);
       }
+    } catch (err: any) {
+      logToFile(`[${providerName} WS] Error loading e-commerce details for confirmation instruction: ${err?.message || err}`);
     }
 
-    const instruction = compiledInstruction + customBookingInstruction;
+    const instruction = compiledInstruction + customEcommerceInstruction;
     const temperature = typeof persona.temperature === "number" ? persona.temperature : 0.7;
 
     console.log(`[${providerName}] Connecting Gemini Live. Voice: ${persona.voice}. Temp: ${temperature}`);

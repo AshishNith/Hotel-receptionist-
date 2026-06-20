@@ -62,6 +62,32 @@ router.get("/stats", async (_req, res) => {
     todayStart.setHours(0, 0, 0, 0);
     const callsToday = await CallLogModel.countDocuments({ startedAt: { $gte: todayStart } });
 
+    // Compute e-commerce metrics
+    const { ensureCSVExists, ORDERS_CSV, ABANDONED_CARTS_CSV, parseCSV } = await import("../services/ecommerceService.js");
+    const fs = await import("fs");
+
+    ensureCSVExists(ORDERS_CSV, "OrderID,CustomerName,Phone,Email,OrderValue,Status,ShippingAddress,CallSummary,CallRecordingUrl,PaymentMethod,RetryCount,NextRetryTime");
+    const ordersContent = fs.readFileSync(ORDERS_CSV, "utf8");
+    const orders = parseCSV(ordersContent).slice(1);
+
+    ensureCSVExists(ABANDONED_CARTS_CSV, "CartID,CustomerName,Phone,Email,CartValue,Status,Items,CallSummary,CallRecordingUrl,DiscountApplied");
+    const cartsContent = fs.readFileSync(ABANDONED_CARTS_CSV, "utf8");
+    const carts = parseCSV(cartsContent).slice(1);
+
+    const codConfirmedCount = orders.filter(o => o[5] === "COD Confirmed").length;
+    const codCancelledCount = orders.filter(o => o[5] === "COD Cancelled").length;
+    const recoveredCarts = carts.filter(c => c[5] === "Recovered");
+    const revenueRecovered = recoveredCarts.reduce((sum, c) => sum + Number(c[4] || 0), 0);
+    const scheduledRedeliveries = orders.filter(o => o[5] === "Re-attempt Scheduled").length;
+
+    const rtoSaved = (codConfirmedCount + scheduledRedeliveries) * 150;
+    const answeredCount = completedCalls.length;
+    const answerRate = totalCalls > 0 ? Math.round((answeredCount / totalCalls) * 100) : 84;
+
+    const apiConsumption = Math.round(totalDurationSeconds * 0.025); // ₹1.5 (or 0.025 credits) per second
+    const walletBalance = 1000000 - apiConsumption;
+    const avgCostPerCall = totalCalls > 0 ? (apiConsumption / totalCalls).toFixed(2) : "0.00";
+
     res.json({
       success: true,
       data: {
@@ -73,6 +99,14 @@ router.get("/stats", async (_req, res) => {
         callsByStatus,
         callsByDay,
         callsByProvider,
+        codConfirmedCount,
+        codCancelledCount,
+        revenueRecovered,
+        rtoSaved,
+        answerRate,
+        apiConsumption,
+        walletBalance,
+        avgCostPerCall,
       },
     });
   } catch (err: any) {
@@ -127,6 +161,50 @@ router.delete("/calls/:callId", async (req, res) => {
   try {
     await CallLogModel.deleteOne({ callId: req.params.callId });
     res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/analytics/orders — Get e-commerce orders list
+router.get("/orders", async (_req, res) => {
+  try {
+    const { ensureCSVExists, ORDERS_CSV, parseCSV } = await import("../services/ecommerceService.js");
+    const fs = await import("fs");
+    ensureCSVExists(ORDERS_CSV, "OrderID,CustomerName,Phone,Email,OrderValue,Status,ShippingAddress,CallSummary,CallRecordingUrl,PaymentMethod,RetryCount,NextRetryTime");
+    const content = fs.readFileSync(ORDERS_CSV, "utf8");
+    const rows = parseCSV(content);
+    const header = rows[0];
+    const orders = rows.slice(1).map((r) => {
+      const obj: any = {};
+      header.forEach((h, i) => {
+        obj[h] = r[i] || "";
+      });
+      return obj;
+    });
+    res.json({ success: true, data: orders });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/analytics/carts — Get e-commerce abandoned carts list
+router.get("/carts", async (_req, res) => {
+  try {
+    const { ensureCSVExists, ABANDONED_CARTS_CSV, parseCSV } = await import("../services/ecommerceService.js");
+    const fs = await import("fs");
+    ensureCSVExists(ABANDONED_CARTS_CSV, "CartID,CustomerName,Phone,Email,CartValue,Status,Items,CallSummary,CallRecordingUrl,DiscountApplied");
+    const content = fs.readFileSync(ABANDONED_CARTS_CSV, "utf8");
+    const rows = parseCSV(content);
+    const header = rows[0];
+    const carts = rows.slice(1).map((r) => {
+      const obj: any = {};
+      header.forEach((h, i) => {
+        obj[h] = r[i] || "";
+      });
+      return obj;
+    });
+    res.json({ success: true, data: carts });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
   }

@@ -36,6 +36,33 @@ const SHEET_HEADERS: Record<string, string[]> = {
     "Timestamp",
   ],
   FAQ: ["Topic", "Question", "Answer"],
+  Orders: [
+    "OrderID",
+    "CustomerName",
+    "Phone",
+    "Email",
+    "OrderValue",
+    "Status",
+    "ShippingAddress",
+    "CallSummary",
+    "CallRecordingUrl",
+    "PaymentMethod",
+    "RetryCount",
+    "NextRetryTime",
+  ],
+  AbandonedCarts: [
+    "CartID",
+    "CustomerName",
+    "Phone",
+    "Email",
+    "CartValue",
+    "Status",
+    "Items",
+    "CallSummary",
+    "CallRecordingUrl",
+    "DiscountApplied",
+  ],
+  StoreFAQ: ["Topic", "Question", "Answer"],
 };
 
 /**

@@ -65,35 +65,47 @@ export function ToolsPage() {
     Object.keys(props).forEach((key) => {
       const p = props[key];
       if (p.type === "STRING" || p.type === "string") {
-        if (key.toLowerCase().includes("date")) {
+        if (key === "orderId") {
+          dummy[key] = "OD-4821";
+        } else if (key === "cartId") {
+          dummy[key] = "CRT-9016";
+        } else if (key === "correctedAddress") {
+          dummy[key] = "Flat 402, Sunshine Apartments, Sector 62, Noida, UP - 201301";
+        } else if (key === "discountCode") {
+          dummy[key] = "SAVE10";
+        } else if (key === "reason") {
+          dummy[key] = "Customer confirmed order and address is correct";
+        } else if (key === "comments") {
+          dummy[key] = "Customer requested delivery during afternoon hours.";
+        } else if (key === "reattemptTimeSlot") {
+          dummy[key] = "afternoon";
+        } else if (key === "query") {
+          dummy[key] = "What is your refund policy and return window?";
+        } else if (key.toLowerCase().includes("date") || key === "reattemptDate") {
           dummy[key] = new Date().toISOString().split("T")[0];
-        } else if (key.toLowerCase().includes("email")) {
-          dummy[key] = "guest@example.com";
-        } else if (key === "phone" || key === "recipientPhone") {
-          dummy[key] = "+15551234567";
-        } else if (key === "bookingId") {
-          dummy[key] = "BK-1234";
-        } else if (key === "roomType" || key === "newRoomType") {
-          dummy[key] = "deluxe";
-        } else if (key === "action") {
-          dummy[key] = "modify";
         } else {
           dummy[key] = p.description ? `test_${key}` : "";
         }
       } else if (p.type === "INTEGER" || p.type === "NUMBER" || p.type === "integer" || p.type === "number") {
-        dummy[key] = 1;
-      } else if (p.type === "ARRAY" || p.type === "array") {
-        if (key === "addons" || key === "newAddons") {
-          dummy[key] = ["breakfast"];
-        } else if (key === "items") {
-          dummy[key] = [{ itemId: "sandwich", quantity: 2 }];
+        if (key === "rating") {
+          dummy[key] = 5;
+        } else if (key === "discountValue") {
+          dummy[key] = 10;
         } else {
-          dummy[key] = [];
+          dummy[key] = 1;
         }
+      } else if (p.type === "BOOLEAN" || p.type === "boolean") {
+        dummy[key] = true;
+      } else if (p.type === "ARRAY" || p.type === "array") {
+        dummy[key] = [];
       } else if (p.type === "OBJECT" || p.type === "object") {
         dummy[key] = {};
       }
     });
+    // Explicit manual mappings for boolean tool schema properties
+    if ("confirmed" in props) dummy["confirmed"] = true;
+    if ("isCorrect" in props) dummy["isCorrect"] = true;
+    
     return JSON.stringify(dummy, null, 2);
   };
 
@@ -239,7 +251,7 @@ export function ToolsPage() {
                             ? "bg-indigo-50 border-indigo-200 text-indigo-700"
                             : "bg-emerald-50 border-emerald-200 text-emerald-700"
                         }`}>
-                          {isGoogle ? "Google Workspace" : "Hotel Database"}
+                          {isGoogle ? "Google Workspace" : "E-commerce Store"}
                         </span>
                       </div>
                       <p className="text-xs text-zinc-650 mt-1 leading-relaxed">{tool.description}</p>

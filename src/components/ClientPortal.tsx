@@ -60,7 +60,7 @@ export const ClientPortal: React.FC = () => {
   const [selectedCall, setSelectedCall] = useState<CallLogDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
-  // ─── Booking Confirmation States ────────────────────────────────
+  // ─── Order Sync & Confirmation States ─────────────────────────
   const [scanning, setScanning] = useState(false);
   const [scanNotification, setScanNotification] = useState<string | null>(null);
 
@@ -128,7 +128,7 @@ export const ClientPortal: React.FC = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           toNumber: formattedNumber,
-          personaId: "diya", // Default Grand Imperial Receptionist
+          personaId: "cod_confirm", // Default COD Confirmation Agent
         }),
       });
 
@@ -178,19 +178,19 @@ export const ClientPortal: React.FC = () => {
     setScanning(true);
     setScanNotification(null);
     try {
-      const res = await fetch("/api/bookings/trigger-confirmations", {
+      const res = await fetch("/api/orders/trigger-confirmations", {
         method: "POST",
       });
       const data = await res.json();
       if (data.success) {
         setScanNotification(
           data.triggeredCount > 0
-            ? `Successfully scanned and triggered confirmation calls for ${data.triggeredCount} booking(s) arriving in the next 24 hours.`
-            : "Successfully scanned bookings. No bookings checked in within 24 hours required a confirmation call."
+            ? `Successfully scanned and triggered confirmation calls for ${data.triggeredCount} COD order(s).`
+            : "Successfully scanned orders. No orders require a confirmation call at this time."
         );
         fetchCalls(1);
       } else {
-        setScanNotification(`Failed to scan bookings: ${data.error || "Unknown error"}`);
+        setScanNotification(`Failed to scan orders: ${data.error || "Unknown error"}`);
       }
     } catch (err: any) {
       setScanNotification(`Network error while scanning: ${err?.message || err}`);
@@ -233,10 +233,10 @@ export const ClientPortal: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-6">
         <div>
           <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-[0.2em] bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-md">
-            Guest Reception Portal
+            DTC Calling Portal
           </span>
           <h2 className="text-3xl font-light tracking-tight text-white mt-3">
-            Hotel AI Calling Dashboard
+            DTC E-commerce Calling Dashboard
           </h2>
           <p className="text-xs text-zinc-500 font-mono tracking-widest mt-1 uppercase">
             Live Outbound Dialing & AI Call Audits
@@ -257,17 +257,17 @@ export const ClientPortal: React.FC = () => {
           <div className="absolute top-[-30%] right-[-5%] w-[250px] h-[250px] bg-emerald-600/10 rounded-full blur-[80px] pointer-events-none"></div>
           <div>
             <h3 className="text-lg font-light tracking-tight text-white flex items-center gap-2 mb-2">
-              <Phone className="w-4 h-4 text-emerald-400" /> Start Guest Call
+              <Phone className="w-4 h-4 text-emerald-400" /> Start Customer Call
             </h3>
             <p className="text-xs text-zinc-400 leading-relaxed font-serif italic mb-6">
-              Connect our AI Guest Receptionist (Diya) directly to a client or guest's phone number instantly.
+              Connect our AI Calling Agent (Via) directly to a customer's phone number instantly.
             </p>
 
             <form onSubmit={handleInitiateCall} className="space-y-4">
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Enter guest phone number (e.g. 9812345678)"
+                  placeholder="Enter customer phone number (e.g. 9812345678)"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   disabled={callState !== "idle"}
@@ -290,7 +290,7 @@ export const ClientPortal: React.FC = () => {
                   disabled={!phoneNumber.trim()}
                   className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-medium py-4 px-6 rounded-2xl hover:scale-[101%] transition-all duration-300 shadow-lg shadow-emerald-500/10 text-xs font-mono uppercase tracking-wider text-center cursor-pointer disabled:opacity-20 disabled:scale-100 disabled:shadow-none disabled:cursor-not-allowed"
                 >
-                  Initiate Guest Call
+                  Initiate Customer Call
                 </button>
               ) : (
                 <div className="flex gap-4">
@@ -346,7 +346,7 @@ export const ClientPortal: React.FC = () => {
                     <Phone className="w-6 h-6 animate-bounce" />
                   </div>
                   <div className="text-center">
-                    <div className="text-xs text-amber-400 font-mono uppercase tracking-widest">Ringing Guest Phone</div>
+                    <div className="text-xs text-amber-400 font-mono uppercase tracking-widest">Ringing Customer Phone</div>
                     <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block mt-1">Awaiting answer</span>
                   </div>
                 </>
@@ -385,12 +385,12 @@ export const ClientPortal: React.FC = () => {
               {scanning ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Scanning Bookings...
+                  Scanning Orders...
                 </>
               ) : (
                 <>
                   <Sparkles className="w-3.5 h-3.5" />
-                  Scan & Confirm 24h Bookings
+                  Scan & Confirm COD Orders
                 </>
               )}
             </button>
@@ -425,7 +425,7 @@ export const ClientPortal: React.FC = () => {
                 <thead>
                   <tr className="text-[9px] text-zinc-500 uppercase tracking-widest border-b border-white/5">
                     <th className="px-6 py-4 text-left font-semibold">Agent Name</th>
-                    <th className="px-4 py-4 text-left font-semibold">Guest Number</th>
+                    <th className="px-4 py-4 text-left font-semibold">Customer Number</th>
                     <th className="px-4 py-4 text-left font-semibold">Duration</th>
                     <th className="px-4 py-4 text-left font-semibold">Link Status</th>
                     <th className="px-4 py-4 text-left font-semibold">Call Time</th>
@@ -542,7 +542,7 @@ export const ClientPortal: React.FC = () => {
                 <span className="text-zinc-200 font-bold mt-1 block">{formatDuration(selectedCall.durationSeconds)}</span>
               </div>
               <div>
-                <span className="text-zinc-600 block text-[9px] uppercase tracking-wider">Guest Phone</span>
+                <span className="text-zinc-600 block text-[9px] uppercase tracking-wider">Customer Phone</span>
                 <span className="text-zinc-200 font-bold mt-1 block">{selectedCall.callerNumber || "—"}</span>
               </div>
               <div>
@@ -619,7 +619,7 @@ export const ClientPortal: React.FC = () => {
                         }`}
                       >
                         <span className="text-[8px] font-mono text-zinc-600 uppercase tracking-widest mb-1 capitalize">
-                          {t.role === "user" ? "👤 Guest / Caller" : "🤖 Receptionist / Agent"}
+                          {t.role === "user" ? "👤 Customer / Caller" : "🤖 Calling Agent"}
                         </span>
                         <div
                           className={`text-xs px-4 py-3 rounded-2xl shadow-md ${

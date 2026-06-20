@@ -3,12 +3,16 @@ import { GoogleTokenModel } from "../models/GoogleToken.js";
 import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI } from "../config.js";
 import type { CallLogger } from "./callLogger.js";
 import {
-  checkRoomAvailability,
-  makeRoomReservation,
-  modifyOrCancelReservation,
-  orderFood,
-  getHotelFaq
-} from "./hotelService.js";
+  confirmCodOrder,
+  verifyShippingAddress,
+  applyCartDiscount,
+  scheduleRedelivery,
+  recordDeliveryFeedback,
+  trackOrderStatus,
+  escalateToHuman,
+  getStoreFaq,
+  getOrderDetails
+} from "./ecommerceService.js";
 
 interface FunctionCall {
   id: string;
@@ -49,7 +53,7 @@ async function getAuthenticatedOAuth2(callerPhoneKey: string) {
 }
 
 /**
- * Unified tool call execution handler — executes hotel operations locally (via CSV)
+ * Unified tool call execution handler — executes e-commerce operations locally (via CSV)
  * and Google Workspace tools via OAuth if connected.
  */
 export async function executeToolCalls(
@@ -190,79 +194,155 @@ export async function executeToolCalls(
           break;
         }
 
-        // ─── Hotel Room Receptionist Tools ───
-        case "check_room_availability": {
-          const { startDate, endDate, guestCount, roomTypePreference } = fc.args;
-          response = await checkRoomAvailability(startDate, endDate, guestCount, roomTypePreference);
+        // ─── E-commerce DTC Tools ───
+        case "confirm_cod_order": {
+          const { orderId, confirmed, reason } = fc.args;
+          if (orderId && orderId.toUpperCase().startsWith("DEMO-")) {
+            console.log(`[ToolExecutor] [DEMO MODE] Skip database write for ${orderId}`);
+            response = {
+              success: true,
+              orderId,
+              status: confirmed ? "COD Confirmed" : "COD Cancelled",
+              reason: reason || "Demo updated via AI call."
+            };
+          } else {
+            response = await confirmCodOrder(orderId, confirmed, reason);
+            
+            // Fire-and-forget: send confirmation email in background without blocking the voice loop
+            const orderResponse = response;
+            void (async () => {
+              try {
+                if (!orderResponse.success) return;
+                const orderDetails = await getOrderDetails(orderId);
+                if (!orderDetails || !orderDetails.email) return;
+
+                const activeAuth = await getAuthenticatedOAuth2(callerPhoneKey);
+                if (!activeAuth) return;
+
+                const gmail = google.gmail({ version: "v1", auth: activeAuth });
+                const subject = `Order ${orderId} Update - VeloCart`;
+                const body = `
+                  <h3>Your VeloCart Order status has been updated!</h3>
+                  <p>Dear ${orderDetails.customerName},</p>
+                  <p>Your Cash on Delivery order <strong>${orderId}</strong> status is now: <strong>${orderResponse.status}</strong>.</p>
+                  <p>Shipping Details: ${orderDetails.shippingAddress}</p>
+                  <p>Total Value: Rs. ${orderDetails.orderValue}</p>
+                  <br/>
+                  <p>Thank you for shopping with us!</p>
+                  <p>Best Regards,<br/>Via - VeloCart Support Team</p>
+                `;
+                const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString("base64")}?=`;
+                const messageParts = [
+                  `To: ${orderDetails.email}`,
+                  "Content-Type: text/html; charset=utf-8",
+                  "MIME-Version: 1.0",
+                  `Subject: ${utf8Subject}`,
+                  "",
+                  body,
+                ];
+                const rawMsg = messageParts.join("\n");
+                const encodedMessage = Buffer.from(rawMsg).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+                await gmail.users.messages.send({ userId: "me", requestBody: { raw: encodedMessage } });
+                console.log(`[ToolExecutor] Order update email successfully dispatched to ${orderDetails.email}`);
+              } catch (mailErr) {
+                console.warn("[ToolExecutor] Failed to send automated email update:", mailErr);
+              }
+            })();
+          }
           break;
         }
 
-        case "make_room_reservation": {
-          const { name, phone, email, roomType, checkIn, checkOut, guests, addons } = fc.args;
-          response = await makeRoomReservation(name, phone, email, roomType, checkIn, checkOut, guests, addons || []);
-          
-          // Fire-and-forget: send confirmation email in background WITHOUT blocking the tool response.
-          // This MUST NOT be awaited — Gemini Live has a strict timeout for tool responses and the
-          // Gmail API round-trip (OAuth refresh + send) can take 2-5 seconds, causing a 1008 disconnect.
-          const bookingResponse = response; // capture for closure
-          void (async () => {
-            try {
-              const activeAuth = await getAuthenticatedOAuth2(callerPhoneKey);
-              if (!activeAuth || !email) return;
-
-              const gmail = google.gmail({ version: "v1", auth: activeAuth });
-              const subject = `Booking Confirmation - The Grand Imperial Hotel (${bookingResponse.bookingId})`;
-              const body = `
-                <h3>Thank you for choosing The Grand Imperial Hotel!</h3>
-                <p>Dear ${name},</p>
-                <p>Your room booking has been successfully confirmed. Here are your reservation details:</p>
-                <ul>
-                  <li><strong>Booking ID:</strong> ${bookingResponse.bookingId}</li>
-                  <li><strong>Room Type:</strong> ${bookingResponse.roomType}</li>
-                  <li><strong>Check-in Date:</strong> ${checkIn}</li>
-                  <li><strong>Check-out Date:</strong> ${checkOut}</li>
-                  <li><strong>Guests:</strong> ${guests}</li>
-                  <li><strong>Total Price:</strong> Rs. ${bookingResponse.totalPrice}</li>
-                  <li><strong>Add-ons Selected:</strong> ${bookingResponse.addons && bookingResponse.addons.length > 0 ? bookingResponse.addons.join(", ") : "None"}</li>
-                </ul>
-                <p>We look forward to welcoming you soon!</p>
-                <p>Best Regards,<br/>Diya - Hotel AI Receptionist</p>
-              `;
-              const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString("base64")}?=`;
-              const messageParts = [
-                `To: ${email}`,
-                "Content-Type: text/html; charset=utf-8",
-                "MIME-Version: 1.0",
-                `Subject: ${utf8Subject}`,
-                "",
-                body,
-              ];
-              const rawMsg = messageParts.join("\n");
-              const encodedMessage = Buffer.from(rawMsg).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-              await gmail.users.messages.send({ userId: "me", requestBody: { raw: encodedMessage } });
-              console.log(`[ToolExecutor] Booking confirmation email successfully dispatched to ${email}`);
-            } catch (mailErr) {
-              console.warn("[ToolExecutor] Failed to send automated confirmation email:", mailErr);
-            }
-          })();
+        case "verify_shipping_address": {
+          const { orderId, correctedAddress, isCorrect } = fc.args;
+          if (orderId && orderId.toUpperCase().startsWith("DEMO-")) {
+            console.log(`[ToolExecutor] [DEMO MODE] Skip database write for ${orderId}`);
+            response = {
+              success: true,
+              orderId,
+              isCorrect,
+              shippingAddress: correctedAddress || "Flat 402, Royal Palms, Sector 62, Noida, UP - 201301"
+            };
+          } else {
+            response = await verifyShippingAddress(orderId, correctedAddress, isCorrect);
+          }
           break;
         }
 
-        case "modify_or_cancel_reservation": {
-          const { bookingId, phone, action, updates } = fc.args;
-          response = await modifyOrCancelReservation(bookingId, phone, action, updates);
+        case "apply_cart_discount": {
+          const { cartId, discountCode, discountValue } = fc.args;
+          if (cartId && cartId.toUpperCase().startsWith("DEMO-")) {
+            console.log(`[ToolExecutor] [DEMO MODE] Skip database write for ${cartId}`);
+            response = {
+              success: true,
+              cartId,
+              discountApplied: discountCode || "SAVE10",
+              cartValue: 1349
+            };
+          } else {
+            response = await applyCartDiscount(cartId, discountCode, discountValue);
+          }
           break;
         }
 
-        case "order_food": {
-          const { bookingIdOrRoom, items } = fc.args;
-          response = await orderFood(bookingIdOrRoom, items);
+        case "schedule_redelivery": {
+          const { orderId, reattemptDate, reattemptTimeSlot } = fc.args;
+          if (orderId && orderId.toUpperCase().startsWith("DEMO-")) {
+            console.log(`[ToolExecutor] [DEMO MODE] Skip database write for ${orderId}`);
+            response = {
+              success: true,
+              orderId,
+              status: "Redelivery Scheduled",
+              reattemptDate,
+              reattemptTimeSlot
+            };
+          } else {
+            response = await scheduleRedelivery(orderId, reattemptDate, reattemptTimeSlot);
+          }
           break;
         }
 
-        case "get_hotel_faq": {
+        case "record_delivery_feedback": {
+          const { orderId, rating, comments } = fc.args;
+          if (orderId && orderId.toUpperCase().startsWith("DEMO-")) {
+            console.log(`[ToolExecutor] [DEMO MODE] Skip database write for ${orderId}`);
+            response = {
+              success: true,
+              orderId,
+              rating,
+              comments
+            };
+          } else {
+            response = await recordDeliveryFeedback(orderId, rating, comments);
+          }
+          break;
+        }
+
+        case "track_order_shipment": {
+          const { orderId } = fc.args;
+          if (orderId && orderId.toUpperCase().startsWith("DEMO-")) {
+            console.log(`[ToolExecutor] [DEMO MODE] Skip tracking lookup for ${orderId}`);
+            response = {
+              success: true,
+              orderId,
+              status: "In Transit",
+              courier: "Delhivery",
+              estimatedDelivery: "In 2 days"
+            };
+          } else {
+            response = await trackOrderStatus(orderId);
+          }
+          break;
+        }
+
+        case "escalate_to_human": {
+          const { reason } = fc.args;
+          response = await escalateToHuman(callerPhoneKey, reason);
+          break;
+        }
+
+        case "get_store_faq": {
           const { query } = fc.args;
-          response = await getHotelFaq(query);
+          response = await getStoreFaq(query);
           break;
         }
 

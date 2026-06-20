@@ -11,10 +11,10 @@ export function CreditsPage() {
   };
 
   const TRANSACTIONS = [
-    { id: "TX-9018", date: "2026-06-18", description: "Inbound Call (diya) - 3m 42s", amount: -370, status: "Success" },
+    { id: "TX-9018", date: "2026-06-18", description: "Inbound Call (via) - 3m 42s", amount: -370, status: "Success" },
     { id: "TX-9017", date: "2026-06-17", description: "Outbound Call (+918002825353) - 12m 10s", amount: -1210, status: "Success" },
     { id: "TX-9016", date: "2026-06-15", description: "Credit Refill - Package Standard", amount: 100000, status: "Success" },
-    { id: "TX-9015", date: "2026-06-14", description: "Inbound Call (diya) - 1m 15s", amount: -125, status: "Success" },
+    { id: "TX-9015", date: "2026-06-14", description: "Inbound Call (via) - 1m 15s", amount: -125, status: "Success" },
   ];
 
   const PLANS = [

@@ -13,11 +13,11 @@ router.get("/", async (_req, res) => {
     const googleTokensCount = await GoogleTokenModel.countDocuments({ refresh_token: { $exists: true } });
     const isGoogleConfigured = !!GOOGLE_CLIENT_ID;
 
-    // Check Hotel CSV database files existence
+    // Check E-commerce CSV database files existence
     const DATA_DIR = path.resolve(process.cwd(), "data");
-    const bookingsExist = fs.existsSync(path.join(DATA_DIR, "bookings.csv"));
-    const faqsExist = fs.existsSync(path.join(DATA_DIR, "hotel_faq.csv"));
-    const menuExists = fs.existsSync(path.join(DATA_DIR, "restaurant_menu.json"));
+    const ordersExist = fs.existsSync(path.join(DATA_DIR, "orders.csv"));
+    const cartsExist = fs.existsSync(path.join(DATA_DIR, "abandoned_carts.csv"));
+    const faqsExist = fs.existsSync(path.join(DATA_DIR, "store_faq.csv"));
 
     const toolsWithStatus = allToolDeclarations.map((tool) => {
       let status: "active" | "error" | "needs_auth" | "not_configured" = "active";
@@ -36,13 +36,13 @@ router.get("/", async (_req, res) => {
           statusDetails = `Active with ${googleTokensCount} authenticated connection(s).`;
         }
       } else {
-        // Hotel tools
-        if (!bookingsExist || !faqsExist || !menuExists) {
+        // E-commerce tools
+        if (!ordersExist || !cartsExist || !faqsExist) {
           status = "error";
-          statusDetails = "Database files missing in data/ folder. Re-run app or check logs.";
+          statusDetails = "E-commerce database files (orders, carts, or FAQ) missing in data/ folder.";
         } else {
           status = "active";
-          statusDetails = "Hotel database and policy files are online and writeable.";
+          statusDetails = "E-commerce store database files are online and writeable.";
         }
       }
 

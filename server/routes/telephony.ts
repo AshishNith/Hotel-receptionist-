@@ -15,7 +15,7 @@ const router = Router();
 router.all("/twilio/incoming-call", (req, res) => {
   const appUrl = getPublicAppUrl(req);
   const streamUrl = appUrl.replace(/^http:/, "ws:").replace(/^https:/, "wss:");
-  const targetId = req.query.personaId || "diya";
+  const targetId = req.query.personaId || "cod_confirm";
   const callerNumber = encodeURIComponent(req.body?.From || req.query.From || "");
 
   console.log(`[Webhook] Inbound call received on Twilio endpoint! Target: ${targetId}, From: ${callerNumber}`);
@@ -35,7 +35,7 @@ router.all("/twilio/incoming-call", (req, res) => {
 function sendVobizStreamXml(req: any, res: any) {
   const appUrl = getPublicAppUrl(req);
   const streamUrl = appUrl.replace(/^http:/, "ws:").replace(/^https:/, "wss:");
-  const targetId = req.query.personaId || "diya";
+  const targetId = req.query.personaId || "cod_confirm";
   const callerNumber = encodeURIComponent(req.body?.From || req.query.From || req.query.caller || "");
   const callId = req.query.callId || "";
   const direction = req.query.direction || "inbound";
@@ -67,7 +67,7 @@ router.all("/vobiz/hangup", (req, res) => {
 router.all("/vobiz/outbound-answer", (req, res) => {
   const appUrl = getPublicAppUrl(req);
   const streamUrl = appUrl.replace(/^http:/, "ws:").replace(/^https:/, "wss:");
-  const personaId = req.query.personaId || "diya";
+  const personaId = req.query.personaId || "cod_confirm";
   const callId = (req.query.callId as string) || "";
   const bookingId = (req.query.bookingId as string) || "";
 
@@ -105,7 +105,7 @@ router.post("/outbound/call", async (req, res) => {
     logToFile(`[Outbound] Initiating call to: ${toNumber}, persona: ${personaId}, resolved appUrl: ${appUrl}`);
     const callState = await initiateOutboundCall(
       toNumber,
-      personaId || "diya",
+      personaId || "cod_confirm",
       appUrl
     );
     logToFile(`[Outbound] Call initiated! ID: ${callState.callId}, UUID: ${callState.callUUID}, Status: ${callState.status}`);
@@ -153,15 +153,15 @@ router.post("/outbound/hangup/:callId", async (req, res) => {
   res.json({ success });
 });
 
-// ─── Booking Confirmation Call Trigger Scanner ──────────────────
+// ─── Order Confirmation Call Trigger Scanner ──────────────────
 
-router.post("/bookings/trigger-confirmations", async (req, res) => {
+async function handleOrderConfirmationsTrigger(req: any, res: any) {
   try {
     const appUrl = getPublicAppUrl(req);
-    logToFile(`[Confirmation Scanner] Scanning bookings for outbound confirmation calls. appUrl: ${appUrl}`);
+    logToFile(`[Order Scanner] Scanning orders for outbound COD confirmation calls. appUrl: ${appUrl}`);
 
-    const { getSheetsAuthClient, readSheetRows } = await import("../services/googleSheetsService.js");
-    const { isGoogleSheetsActive, BOOKINGS_CSV, parseCSV, ensureCSVExists } = await import("../services/hotelService.js");
+    const { readSheetRows } = await import("../services/googleSheetsService.js");
+    const { isGoogleSheetsActive, ORDERS_CSV, parseCSV, ensureCSVExists } = await import("../services/ecommerceService.js");
     const fs = await import("fs");
 
     const useSheets = await isGoogleSheetsActive();
@@ -169,92 +169,144 @@ router.post("/bookings/trigger-confirmations", async (req, res) => {
 
     if (useSheets) {
       try {
-        rows = await readSheetRows("Bookings");
+        rows = await readSheetRows("Orders");
       } catch (err: any) {
-        logToFile(`[Confirmation Scanner] Google Sheets read failed, falling back to CSV: ${err?.message || err}`);
+        logToFile(`[Order Scanner] Google Sheets read failed, falling back to CSV: ${err?.message || err}`);
         ensureCSVExists(
-          BOOKINGS_CSV,
-          "BookingID,Name,Phone,Email,RoomType,CheckIn,CheckOut,Guests,TotalPrice,Status,Addons,CallSummary,CallRecordingUrl"
+          ORDERS_CSV,
+          "OrderID,CustomerName,Phone,Email,OrderValue,Status,ShippingAddress,CallSummary,CallRecordingUrl,PaymentMethod,RetryCount,NextRetryTime"
         );
-        const content = fs.readFileSync(BOOKINGS_CSV, "utf8");
+        const content = fs.readFileSync(ORDERS_CSV, "utf8");
         rows = parseCSV(content);
       }
     } else {
       ensureCSVExists(
-        BOOKINGS_CSV,
-        "BookingID,Name,Phone,Email,RoomType,CheckIn,CheckOut,Guests,TotalPrice,Status,Addons,CallSummary,CallRecordingUrl"
+        ORDERS_CSV,
+        "OrderID,CustomerName,Phone,Email,OrderValue,Status,ShippingAddress,CallSummary,CallRecordingUrl,PaymentMethod,RetryCount,NextRetryTime"
       );
-      const content = fs.readFileSync(BOOKINGS_CSV, "utf8");
+      const content = fs.readFileSync(ORDERS_CSV, "utf8");
       rows = parseCSV(content);
     }
 
     if (rows.length <= 1) {
-      return res.json({ success: true, triggeredCount: 0, message: "No bookings found in database." });
+      return res.json({ success: true, triggeredCount: 0, message: "No orders found in database." });
     }
 
     const header = rows[0];
     const dataRows = rows.slice(1);
 
-    const idIdx = header.indexOf("BookingID");
-    const nameIdx = header.indexOf("Name");
+    const idIdx = header.indexOf("OrderID");
+    const nameIdx = header.indexOf("CustomerName");
     const phoneIdx = header.indexOf("Phone");
-    const checkInIdx = header.indexOf("CheckIn");
     const statusIdx = header.indexOf("Status");
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const triggeredBookings: string[] = [];
+    const triggeredOrders: string[] = [];
 
     for (const row of dataRows) {
-      const bookingId = row[idIdx];
+      const orderId = row[idIdx];
       const name = row[nameIdx];
       const phone = row[phoneIdx];
-      const checkInStr = row[checkInIdx];
       const status = row[statusIdx];
 
-      if (status !== "Booked") continue;
+      if (status !== "Pending COD Confirmation") continue;
 
-      const checkInDate = parseDateString(checkInStr);
-      if (!checkInDate) continue;
+      logToFile(`[Order Scanner] Order ${orderId} qualifies (Name: ${name}, Phone: ${phone})`);
 
-      const checkInLocalMidnight = new Date(checkInDate);
-      checkInLocalMidnight.setHours(0, 0, 0, 0);
+      let formattedNumber = phone.trim();
+      if (!formattedNumber.startsWith("+")) {
+        formattedNumber = "+91" + formattedNumber.replace(/^0+/, "");
+      }
 
-      const diffMs = checkInLocalMidnight.getTime() - today.getTime();
-      const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-
-      // Trigger calls for any booking arriving today or tomorrow local time
-      if (diffDays === 0 || diffDays === 1) {
-        logToFile(`[Confirmation Scanner] Booking ${bookingId} qualifies (Name: ${name}, Phone: ${phone}, Diff Days: ${diffDays})`);
-
-        let formattedNumber = phone.trim();
-        if (!formattedNumber.startsWith("+")) {
-          formattedNumber = "+91" + formattedNumber.replace(/^0+/, "");
-        }
-
-        try {
-          await initiateOutboundCall(
-            formattedNumber,
-            "diya",
-            appUrl,
-            bookingId
-          );
-          triggeredBookings.push(bookingId);
-        } catch (callErr: any) {
-          logToFile(`[Confirmation Scanner] Failed calling booking ${bookingId}: ${callErr?.message || callErr}`);
-        }
+      try {
+        // Trigger outbound call using the dedicated cod_confirm persona
+        await initiateOutboundCall(
+          formattedNumber,
+          "cod_confirm",
+          appUrl,
+          orderId
+        );
+        triggeredOrders.push(orderId);
+      } catch (callErr: any) {
+        logToFile(`[Order Scanner] Failed calling order ${orderId}: ${callErr?.message || callErr}`);
       }
     }
 
     res.json({
       success: true,
-      triggeredCount: triggeredBookings.length,
-      triggeredBookings,
-      message: `Successfully scanned and triggered ${triggeredBookings.length} confirmation call(s).`,
+      triggeredCount: triggeredOrders.length,
+      triggeredOrders,
+      message: `Successfully scanned and triggered ${triggeredOrders.length} order confirmation call(s).`,
     });
   } catch (err: any) {
-    console.error("[Confirmation Scanner] Error:", err?.message || err);
-    res.status(500).json({ success: false, error: err?.message || "Failed scanner." });
+    console.error("[Order Scanner] Error:", err?.message || err);
+    res.status(500).json({ success: false, error: err?.message || "Failed order scanner." });
+  }
+}
+
+router.post("/orders/trigger-confirmations", handleOrderConfirmationsTrigger);
+router.post("/bookings/trigger-confirmations", handleOrderConfirmationsTrigger);
+
+router.post("/orders/bulk-add", async (req, res) => {
+  try {
+    const { csvText, type } = req.body;
+    if (!csvText) {
+      return res.status(400).json({ success: false, error: "Missing csvText in body." });
+    }
+    const { ensureCSVExists, ORDERS_CSV, ABANDONED_CARTS_CSV, parseCSV } = await import("../services/ecommerceService.js");
+    const fs = await import("fs");
+
+    const parsed = parseCSV(csvText);
+    if (parsed.length === 0) {
+      return res.status(400).json({ success: false, error: "Invalid CSV format." });
+    }
+
+    const isCart = type === "cart";
+    const targetFile = isCart ? ABANDONED_CARTS_CSV : ORDERS_CSV;
+    const header = isCart
+      ? "CartID,CustomerName,Phone,Email,CartValue,Status,Items,CallSummary,CallRecordingUrl,DiscountApplied"
+      : "OrderID,CustomerName,Phone,Email,OrderValue,Status,ShippingAddress,CallSummary,CallRecordingUrl,PaymentMethod,RetryCount,NextRetryTime";
+
+    ensureCSVExists(targetFile, header);
+
+    let startIndex = 0;
+    if (parsed[0][0].toLowerCase().includes("id") || parsed[0][0].toLowerCase().includes("name") || parsed[0][0].toLowerCase().includes("phone")) {
+      startIndex = 1;
+    }
+
+    let addedCount = 0;
+    for (let i = startIndex; i < parsed.length; i++) {
+      const row = parsed[i];
+      if (row.length < 3) continue;
+
+      let fullRow: string[];
+      if (isCart) {
+        const cartId = row[0] || "CRT-" + Math.floor(1000 + Math.random() * 9000);
+        const name = row[1] || "Customer";
+        const phone = row[2] || "";
+        const email = row[3] || "";
+        const val = row[4] || "0";
+        const status = row[5] || "Abandoned";
+        const items = row[6] || "";
+        fullRow = [cartId, name, phone, email, val, status, items, "", "", ""];
+      } else {
+        const orderId = row[0] || "OD-" + Math.floor(1000 + Math.random() * 9000);
+        const name = row[1] || "Customer";
+        const phone = row[2] || "";
+        const email = row[3] || "";
+        const val = row[4] || "0";
+        const status = row[5] || "Pending COD Confirmation";
+        const addr = row[6] || "";
+        const pm = row[7] || "COD";
+        fullRow = [orderId, name, phone, email, val, status, addr, "", "", pm, "0", ""];
+      }
+
+      fs.appendFileSync(targetFile, fullRow.join(",") + "\n", "utf8");
+      addedCount++;
+    }
+
+    res.json({ success: true, count: addedCount });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

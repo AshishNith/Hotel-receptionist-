@@ -1,0 +1,6 @@
+OrderID,CustomerName,Phone,Email,OrderValue,Status,ShippingAddress,CallSummary,CallRecordingUrl,PaymentMethod,RetryCount,NextRetryTime
+OD-4821,Ashish Ranjan,9934225353,ashish@example.com,1499,COD Confirmed,"Flat 502, Sunshine Apartments, Noida, UP",,,COD,0,
+OD-8066,Rajesh Kumar,1234567890,rajesh@example.com,899,Pending COD Confirmation,"12-A, Metro Heights, MG Road, Gurgaon, Haryana - 122002",,,COD,0,
+OD-4926,Sita Sharma,9876543210,sita@example.com,2450,COD Confirmed,"House 45, Lane 3, Kavi Nagar, Ghaziabad, UP - 201002",,,COD,0,
+OD-6687,Amit Patel,9934225353,amit@example.com,3200,Delivery Failed (NDR),"204, Dev Castle, SG Highway, Ahmedabad, Gujarat - 380015",,,Prepaid,0,
+OD-1293,Pooja Verma,9934225353,pooja@example.com,1250,Delivered,"Plot 88, Sector 4, Salt Lake, Kolkata, West Bengal - 700091",,,COD,0,

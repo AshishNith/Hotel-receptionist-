@@ -71,13 +71,8 @@ wssTelephony.on("connection", (ws: WebSocket, request) => {
 // ─── Seed Default Personas ──────────────────────────────────────
 async function seedDefaultPersonas(): Promise<void> {
   for (const persona of DEFAULT_PERSONAS) {
-    const existing = await PersonaModel.findOne({ id: persona.id });
-    if (!existing) {
-      await PersonaModel.create(persona);
-      console.log(`[Seed] Created default persona: ${persona.name}`);
-    } else {
-      console.log(`[Seed] Default persona already exists: ${persona.name}. Skipping seed overwrite.`);
-    }
+    await PersonaModel.findOneAndUpdate({ id: persona.id }, persona, { upsert: true, new: true });
+    console.log(`[Seed] Seeded/updated default persona: ${persona.name}`);
   }
   const total = await PersonaModel.countDocuments({});
   console.log(`[Seed] Total personas in database: ${total}`);

@@ -53,7 +53,7 @@ export async function handleBrowserWebSocket(clientWs: WebSocket): Promise<void>
         const googlePhoneKey = message.googlePhoneKey || "default";
         const personaId = message.personaId || "unknown";
         const personaName = message.personaName || "Unknown Agent";
-        const initialGreeting = message.initialGreeting || "Welcome to The Grand Imperial Hotel. How may I assist you today?";
+        const initialGreeting = message.initialGreeting || "Welcome to VeloCart support! How may I assist you today?";
 
         // Initialize call logger
         callLogger = new CallLogger(personaId, personaName, "browser-user", "browser", "outbound");

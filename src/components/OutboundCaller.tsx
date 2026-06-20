@@ -80,7 +80,7 @@ export function OutboundCaller() {
       const res = await fetch("/api/outbound/call", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toNumber: fullNumber, personaId: "diya" }),
+        body: JSON.stringify({ toNumber: fullNumber, personaId: "cod_confirm" }),
       });
       const data = await res.json();
 
@@ -129,18 +129,18 @@ export function OutboundCaller() {
     setScanning(true);
     setScanNotification(null);
     try {
-      const res = await fetch("/api/bookings/trigger-confirmations", {
+      const res = await fetch("/api/orders/trigger-confirmations", {
         method: "POST",
       });
       const data = await res.json();
       if (data.success) {
         setScanNotification(
           data.triggeredCount > 0
-            ? `Successfully triggered confirmation calls for ${data.triggeredCount} booking(s) arriving in the next 24 hours.`
-            : "Successfully scanned bookings. No bookings checked in within 24 hours require a confirmation call."
+            ? `Successfully triggered confirmation calls for ${data.triggeredCount} pending COD order(s).`
+            : "Successfully scanned orders. No orders require a confirmation call at this time."
         );
       } else {
-        setScanNotification(`Failed to scan bookings: ${data.error || "Unknown error"}`);
+        setScanNotification(`Failed to scan orders: ${data.error || "Unknown error"}`);
       }
     } catch (err: any) {
       setScanNotification(`Network error while scanning: ${err?.message || err}`);
@@ -190,7 +190,7 @@ export function OutboundCaller() {
           ) : (
             <>
               <Sparkles className="w-4 h-4 text-zinc-800" />
-              Scan & Confirm 24h Bookings
+              Scan & Confirm Pending COD Orders
             </>
           )}
         </button>
@@ -289,9 +289,9 @@ export function OutboundCaller() {
             {/* Persona indicator */}
             <div className="mt-6 pt-4 border-t border-zinc-200">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center text-white text-xs font-bold">D</div>
+                <div className="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center text-white text-xs font-bold">V</div>
                 <div>
-                  <p className="text-xs text-zinc-900 font-medium">Diya — Grand Imperial Receptionist</p>
+                  <p className="text-xs text-zinc-900 font-medium">Via — COD Confirmation Agent</p>
                   <p className="text-[10px] text-zinc-500 font-mono">AI agent will converse after call connects</p>
                 </div>
               </div>
@@ -335,7 +335,7 @@ export function OutboundCaller() {
                       }`}
                     >
                       <p className="text-[9px] font-mono uppercase tracking-widest mb-1 text-zinc-500">
-                        {line.role === "agent" ? "🤖 Diya" : "👤 Caller"}
+                        {line.role === "agent" ? "🤖 Via" : "👤 Caller"}
                       </p>
                       {line.text}
                     </div>
