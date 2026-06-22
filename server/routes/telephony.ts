@@ -95,18 +95,19 @@ router.all("/vobiz/outbound-answer", (req, res) => {
 
 router.post("/outbound/call", async (req, res) => {
   try {
-    const { toNumber, personaId } = req.body;
+    const { toNumber, personaId, bookingId } = req.body;
 
     if (!toNumber) {
       return res.status(400).json({ success: false, error: "Missing 'toNumber' in request body." });
     }
 
     const appUrl = getPublicAppUrl(req);
-    logToFile(`[Outbound] Initiating call to: ${toNumber}, persona: ${personaId}, resolved appUrl: ${appUrl}`);
+    logToFile(`[Outbound] Initiating call to: ${toNumber}, persona: ${personaId}, bookingId: ${bookingId}, resolved appUrl: ${appUrl}`);
     const callState = await initiateOutboundCall(
       toNumber,
       personaId || "cod_confirm",
-      appUrl
+      appUrl,
+      bookingId
     );
     logToFile(`[Outbound] Call initiated! ID: ${callState.callId}, UUID: ${callState.callUUID}, Status: ${callState.status}`);
 

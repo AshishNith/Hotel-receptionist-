@@ -186,14 +186,19 @@ export async function handleBrowserWebSocket(clientWs: WebSocket): Promise<void>
           setTimeout(() => {
             try {
               if (geminiSession && sessionAlive) {
+                let greetingText = `Call connected. Greet the caller now warmly using your initial greeting: "${initialGreeting}"`;
+                if (personaId === "cod_confirm") {
+                  greetingText = `Call connected. Greet the customer professionally in Hindi by saying exactly: "नमस्ते, मैं VeloCart से वाया बात कर रही हूँ। क्या मेरी बात कस्टमर से हो रही है?" Do not ask how you can help them. Keep the tone professional, polite, direct, and concise.`;
+                }
+
                 geminiSession.sendClientContent({
                   turns: [{
                     role: "user",
-                    parts: [{ text: `Call connected. Greet the caller now warmly using your initial greeting: "${initialGreeting}"` }],
+                    parts: [{ text: greetingText }],
                   }],
                   turnComplete: true,
                 });
-                console.log("[WS] Greeting dispatched.");
+                console.log(`[WS] Greeting dispatched: ${greetingText}`);
               }
             } catch (err: any) {
               console.error("[WS] Failed to send initial greeting:", err?.message || err);

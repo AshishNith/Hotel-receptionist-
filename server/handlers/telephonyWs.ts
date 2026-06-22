@@ -47,7 +47,6 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
 
   // Initialize call logger
   const callLogger = new CallLogger(persona.id, persona.name, callerNumber, provider as any, direction);
-
   let geminiSession: any = null;
   let streamSid = "";
   let isInitiated = false;
@@ -58,6 +57,8 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
   let outputAudioChunkCount = 0;
   let inboundEncoding = isVobizStream ? "audio/x-l16" : "audio/x-mulaw";
   let inboundSampleRate = isVobizStream ? 16000 : 8000;
+  let order: any = null;
+  let cart: any = null;
 
   const sendGreeting = () => {
     if (greetingSent) return;
@@ -65,16 +66,25 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
       greetingSent = true;
       setTimeout(() => {
         try {
+          let greetingText = "";
+          if (order) {
+            greetingText = `Call connected. Greet the customer professionally in Hindi by saying exactly: "नमस्ते, मैं VeloCart से वाया बात कर रही हूँ। क्या मेरी बात ${order.customerName} से हो रही है?" Do not ask how you can help them. Keep the tone professional, polite, direct, and concise.`;
+          } else if (cart) {
+            greetingText = `Call connected. Greet the customer warmly using your initial greeting: "Hi ${cart.customerName}! I noticed you were looking at some clothing items in our store but didn't finish checkout. Is there anything I can help you with?"`;
+          } else {
+            greetingText = `Call connected. Greet the caller using your initial greeting: "${persona.initialGreeting}"`;
+          }
+
           geminiSession.sendClientContent({
             turns: [
               {
                 role: "user",
-                parts: [{ text: "Call connected. Greet the caller now warmly and ask how you can help them today." }],
+                parts: [{ text: greetingText }],
               },
             ],
             turnComplete: true,
           });
-          console.log(`[${providerName}] Greeting dispatched.`);
+          console.log(`[${providerName}] Greeting dispatched: ${greetingText}`);
         } catch (err: any) {
           console.error(`[${providerName}] Failed to send greeting:`, err?.message || err);
         }
@@ -90,8 +100,6 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
     let customEcommerceInstruction = "";
     try {
       const { getOrderDetails, getCartDetails } = await import("../services/ecommerceService.js");
-      let order = null;
-      let cart = null;
       let isDemoCall = false;
 
       if (bookingId) {
@@ -144,7 +152,7 @@ Your strict conversational goal:
 8. Prioritize Hindi for the entire call. Keep statements clear and business-like.
 `;
       } else {
-        const cart = await getCartDetails(bookingId);
+        cart = await getCartDetails(bookingId);
         if (cart) {
           logToFile(`[${providerName} WS] Found cart recovery context for ${cart.cartId} (${cart.customerName})! Injected instruction.`);
           customEcommerceInstruction = `\n\n### CRITICAL CALL OUTBOUND MISSION: ABANDONED CART RECOVERY
