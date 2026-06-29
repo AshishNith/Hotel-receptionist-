@@ -4,7 +4,7 @@ import {
   PhoneCall, Clock, TrendingUp, Users, BarChart3,
   ChevronLeft, ChevronRight, X, Phone, PhoneOff,
   Monitor, Radio, Wifi, ArrowDownUp, Trash2, Eye,
-  Calendar, MessageSquare, Wrench, Volume2,
+  Calendar, MessageSquare, Wrench, Volume2, Sparkles,
 } from "lucide-react";
 
 function formatDuration(sec: number | undefined): string {
@@ -319,6 +319,15 @@ function CallDetailModal({ call, onClose, onDelete }: { call: CallLogDetail; onC
                 <Volume2 className="w-3 h-3 text-zinc-800" /> Recording
               </h4>
               <audio controls src={call.recordingUrl} className="w-full h-7 outline-none bg-transparent rounded-lg" />
+            </div>
+          )}
+
+          {(call as any).summary && (
+            <div className="bg-indigo-50/50 border border-indigo-200 p-3 rounded-lg">
+              <h4 className="text-[9px] font-semibold tracking-[0.2em] text-indigo-600 uppercase mb-1.5 flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3" /> AI Call Summary
+              </h4>
+              <p className="text-[10px] text-zinc-800 leading-relaxed whitespace-pre-wrap">{(call as any).summary}</p>
             </div>
           )}
 

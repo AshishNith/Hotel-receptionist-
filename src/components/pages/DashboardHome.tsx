@@ -25,7 +25,7 @@ export function DashboardHome({ onPlaceCall }: DashboardHomeProps) {
   const config = useClientConfig();
   const [stats, setStats] = useState<any>(null);
   const [recentCalls, setRecentCalls] = useState<CallLogEntry[]>([]);
-  const [phoneNumber, setPhoneNumber] = useState("9934225353");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [calling, setCalling] = useState(false);
   const [callError, setCallError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -83,7 +83,7 @@ export function DashboardHome({ onPlaceCall }: DashboardHomeProps) {
       const res = await fetch("/api/outbound/call", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toNumber: formatted, personaId: "cod_confirm" }),
+        body: JSON.stringify({ toNumber: formatted, personaId: "order_confirm" }),
       });
       const json = await res.json();
       if (!json.success) {
@@ -109,7 +109,7 @@ export function DashboardHome({ onPlaceCall }: DashboardHomeProps) {
       <div className="dashboard-home-header">
         <h2 className="text-2xl font-semibold tracking-tight text-zinc-900">Dashboard Overview</h2>
         <p className="text-xs text-zinc-500 font-mono tracking-wider mt-1 uppercase">
-          Real-time DTC Call Automation Metrics
+          {config.brand.tagline || "AI Call Automation Metrics"}
         </p>
       </div>
 
@@ -182,7 +182,7 @@ export function DashboardHome({ onPlaceCall }: DashboardHomeProps) {
               </div>
             </div>
             <p className="text-[10px] text-zinc-500 font-serif italic leading-relaxed">
-              API rates are billed at flat ₹1.5/minute of call duration. Wallet balance is reloaded automatically when credits cross threshold.
+              Usage costs are computed from call duration × configured rate per minute. View and manage billing settings in the Settings page.
             </p>
           </div>
 
@@ -195,7 +195,7 @@ export function DashboardHome({ onPlaceCall }: DashboardHomeProps) {
               <h3 className="text-sm font-mono uppercase tracking-widest text-zinc-850">Place a Test Customer Call</h3>
             </div>
             <p className="text-xs text-zinc-500 leading-normal mb-4">
-              Enter a customer's phone number to trigger a test outbound COD Confirmation call using <strong>Via (COD Confirmation Agent)</strong>.
+              Enter a phone number to trigger a test outbound call using the <strong>Order Confirmation Agent</strong>.
             </p>
             <form onSubmit={handleCall} className="call-widget-form">
               <div className="call-widget-input-wrap flex gap-2">

@@ -18,6 +18,7 @@ export interface IPersona {
   silenceTimeout?: number;
   temperature?: number;
   isDefault?: boolean;
+  enabledTools?: string[];
 }
 
 const PersonaSchema = new Schema<IPersona>({
@@ -38,6 +39,7 @@ const PersonaSchema = new Schema<IPersona>({
   silenceTimeout:    { type: Number, default: 30 },
   temperature:       { type: Number, default: 0.7 },
   isDefault:         { type: Boolean, default: false },
+  enabledTools:      { type: [String], default: undefined },
 });
 
 export const PersonaModel = model<IPersona>("Persona", PersonaSchema);

@@ -1,129 +1,288 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useClientConfig } from "../../config/ThemeProvider";
-import { Coins, ArrowUpRight, ShieldCheck, Zap, HelpCircle, FileText } from "lucide-react";
+import { Coins, FileText, RefreshCw, BarChart3, Clock, ArrowUpRight, ShieldCheck } from "lucide-react";
+
+interface AnalyticsStats {
+  totalCalls: number;
+  totalDurationSeconds: number;
+  avgDurationSeconds: number;
+  apiConsumption: number;
+  walletBalance: number;
+  avgCostPerCall: string;
+  callsByPersona: Record<string, number>;
+}
+
+interface CallRecord {
+  callId: string;
+  personaName: string;
+  callerNumber: string;
+  provider: string;
+  direction: string;
+  status: string;
+  startedAt: string;
+  durationSeconds?: number;
+}
+
+interface SettingsData {
+  credits: {
+    costPerMinute: number;
+    walletBalance: number;
+    label: string;
+  };
+}
 
 export function CreditsPage() {
   const config = useClientConfig();
-  const balance = config.credits.total - config.credits.used;
+  const [stats, setStats] = useState<AnalyticsStats | null>(null);
+  const [calls, setCalls] = useState<CallRecord[]>([]);
+  const [settings, setSettings] = useState<SettingsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const formatCredits = (n: number) => {
-    return n.toLocaleString();
+  const fetchData = useCallback(async () => {
+    try {
+      setRefreshing(true);
+      const [statsRes, callsRes, settingsRes] = await Promise.all([
+        fetch("/api/analytics/stats"),
+        fetch("/api/analytics/calls?limit=10"),
+        fetch("/api/settings")
+      ]);
+
+      const [statsJson, callsJson, settingsJson] = await Promise.all([
+        statsRes.json(),
+        callsRes.json(),
+        settingsRes.json()
+      ]);
+
+      if (statsJson.success) setStats(statsJson.data);
+      if (callsJson.success) setCalls(callsJson.data);
+      if (settingsJson.success) setSettings(settingsJson.data);
+    } catch (err) {
+      console.error("Error fetching billing/credits data:", err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const formatCurrency = (n: number) => {
+    return `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
-  const TRANSACTIONS = [
-    { id: "TX-9018", date: "2026-06-18", description: "Inbound Call (via) - 3m 42s", amount: -370, status: "Success" },
-    { id: "TX-9017", date: "2026-06-17", description: "Outbound Call (+918002825353) - 12m 10s", amount: -1210, status: "Success" },
-    { id: "TX-9016", date: "2026-06-15", description: "Credit Refill - Package Standard", amount: 100000, status: "Success" },
-    { id: "TX-9015", date: "2026-06-14", description: "Inbound Call (via) - 1m 15s", amount: -125, status: "Success" },
-  ];
+  const formatDuration = (seconds?: number) => {
+    if (seconds === undefined || seconds === null) return "0s";
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return m > 0 ? `${m}m ${s}s` : `${s}s`;
+  };
 
-  const PLANS = [
-    { name: "Starter Pack", amount: "50,000 credits", price: "$49", description: "Perfect for testing scripts and small flows." },
-    { name: "Growth Pack", amount: "250,000 credits", price: "$199", description: "Ideal for outbound customer outreach campaigns.", popular: true },
-    { name: "Enterprise Custom", amount: "1M+ credits", price: "Custom", description: "Dedicated voice ports and white-label SLA support." },
-  ];
+  const formatDate = (dateStr: string) => {
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    } catch {
+      return dateStr;
+    }
+  };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <RefreshCw className="w-6 h-6 animate-spin text-zinc-400 mr-3" />
+        <span className="text-sm font-mono text-zinc-500">Loading billing details...</span>
+      </div>
+    );
+  }
+
+  const costPerMinute = settings?.credits?.costPerMinute ?? 1.5;
+  const walletBalance = stats?.walletBalance ?? settings?.credits?.walletBalance ?? 100000;
+  const apiConsumption = stats?.apiConsumption ?? 0;
+  const totalCalls = stats?.totalCalls ?? 0;
+  const totalDuration = stats?.totalDurationSeconds ?? 0;
+  
   return (
     <div className="placeholder-page">
-      <div className="placeholder-header">
-        <h2 className="placeholder-title flex items-center gap-2">
-          <Coins className="w-6 h-6" style={{ color: config.brand.accentColor }} />
-          Billing & Credits
-        </h2>
-      </div>
-
-      {/* Credit Overview Panel */}
-      <div className="credits-overview-card" style={{ borderLeftColor: config.brand.accentColor }}>
+      <div className="placeholder-header flex items-center justify-between">
         <div>
-          <span className="credits-overview-label">REMAINING BALANCE</span>
-          <h3 className="credits-overview-value" style={{ color: config.brand.accentColor }}>
-            {formatCredits(balance)} <span className="text-zinc-500 text-sm font-normal">/ {formatCredits(config.credits.total)} total</span>
-          </h3>
-          <p className="text-xs text-zinc-400 mt-1">
-            Usage resets on the 1st of every month. Credits represent seconds of AI active speech time.
+          <h2 className="placeholder-title flex items-center gap-2">
+            <Coins className="w-6 h-6" style={{ color: config.brand.accentColor }} />
+            Billing & Credits
+          </h2>
+          <p className="text-xs text-zinc-500 font-mono tracking-wider mt-1 uppercase">
+            Track real usage metrics and API consumption costs
           </p>
         </div>
         <button
-          className="credits-topup-btn"
-          style={{
-            background: `linear-gradient(135deg, ${config.brand.accentGradientFrom}, ${config.brand.accentGradientTo})`,
-          }}
+          onClick={fetchData}
+          disabled={refreshing}
+          className="p-2 border border-zinc-200 bg-white hover:bg-zinc-50 rounded-xl text-zinc-500 hover:text-zinc-900 transition flex items-center gap-1.5 cursor-pointer text-xs font-mono"
         >
-          <Zap className="w-4 h-4 fill-current text-white" />
-          Buy Credits
+          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+          Refresh
         </button>
       </div>
 
-      {/* Grid: Packages & Transactions */}
-      <div className="credits-grid">
-        {/* Plans */}
-        <div className="col-span-2 space-y-4">
-          <h3 className="credits-section-title">Refill Packages</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {PLANS.map((plan) => (
-              <div
-                key={plan.name}
-                className={`plan-card ${plan.popular ? "plan-card-popular" : ""}`}
-                style={plan.popular ? { borderColor: `${config.brand.accentColor}50` } : undefined}
-              >
-                {plan.popular && (
-                  <span
-                    className="plan-badge"
-                    style={{
-                      background: `linear-gradient(135deg, ${config.brand.accentGradientFrom}, ${config.brand.accentGradientTo})`,
-                    }}
-                  >
-                    POPULAR
-                  </span>
-                )}
-                <h4 className="plan-name">{plan.name}</h4>
-                <div className="plan-amount" style={{ color: plan.popular ? config.brand.accentColor : undefined }}>
-                  {plan.amount}
-                </div>
-                <div className="plan-price">{plan.price}</div>
-                <p className="plan-desc">{plan.description}</p>
-                <button
-                  className={`plan-btn ${plan.popular ? "plan-btn-popular" : ""}`}
-                  style={
-                    plan.popular
-                      ? {
-                          background: `linear-gradient(135deg, ${config.brand.accentGradientFrom}, ${config.brand.accentGradientTo})`,
-                        }
-                      : undefined
-                  }
-                >
-                  Purchase
-                </button>
+      {/* Credit Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        
+        {/* Wallet Balance */}
+        <div className="credits-overview-card bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm relative overflow-hidden" style={{ borderLeft: `4px solid ${config.brand.accentColor}` }}>
+          <span className="credits-overview-label block text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-1">
+            Wallet Balance
+          </span>
+          <h3 className="credits-overview-value text-2xl font-bold font-mono" style={{ color: config.brand.accentColor }}>
+            {formatCurrency(walletBalance)}
+          </h3>
+          <p className="text-[10px] text-zinc-400 mt-2 font-mono uppercase">
+            Credits Label: {settings?.credits?.label || "INR"}
+          </p>
+        </div>
+
+        {/* Cost Rate */}
+        <div className="credits-overview-card bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm" style={{ borderLeft: `4px solid ${config.brand.accentColorLight || "#6366f1"}` }}>
+          <span className="credits-overview-label block text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-1">
+            Call Billing Rate
+          </span>
+          <h3 className="credits-overview-value text-2xl font-bold font-mono text-zinc-900">
+            {formatCurrency(costPerMinute)} <span className="text-xs font-normal text-zinc-500">/ min</span>
+          </h3>
+          <p className="text-[10px] text-zinc-400 mt-2 font-serif italic">
+            Calculated proportionally down to the second of active call time.
+          </p>
+        </div>
+
+        {/* Used Credits */}
+        <div className="credits-overview-card bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm" style={{ borderLeft: "4px solid #f43f5e" }}>
+          <span className="credits-overview-label block text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-1">
+            Total Spent (Consumption)
+          </span>
+          <h3 className="credits-overview-value text-2xl font-bold font-mono text-zinc-900">
+            {formatCurrency(apiConsumption)}
+          </h3>
+          <p className="text-[10px] text-zinc-400 mt-2 font-mono uppercase">
+            Across {totalCalls} total calls ({formatDuration(totalDuration)})
+          </p>
+        </div>
+
+      </div>
+
+      {/* Grid Layout: Usage breakdown and Ledger */}
+      <div className="credits-grid grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Left: Persona Usage Breakdown */}
+        <div className="lg:col-span-1 space-y-4">
+          <h3 className="credits-section-title text-xs font-mono uppercase tracking-widest text-zinc-500 flex items-center gap-1.5">
+            <BarChart3 className="w-4 h-4 text-zinc-650" />
+            Consumption by Persona
+          </h3>
+
+          <div className="bg-white border border-zinc-200 rounded-2xl p-4 shadow-sm space-y-4">
+            {stats && Object.keys(stats.callsByPersona).length > 0 ? (
+              <div className="divide-y divide-zinc-200">
+                {Object.entries(stats.callsByPersona).map(([personaName, count]) => {
+                  // We don't have the exact duration per persona from backend aggregates,
+                  // but we can show the call count, and estimate. Or just show the call counts.
+                  return (
+                    <div key={personaName} className="py-3 first:pt-0 last:pb-0 flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-bold text-zinc-950 font-mono">{personaName}</span>
+                        <p className="text-[10px] text-zinc-500 mt-0.5">{count} {count === 1 ? "call" : "calls"} made</p>
+                      </div>
+                      <div className="bg-zinc-50 border border-zinc-200 px-2.5 py-1 rounded-xl text-[10px] font-mono text-zinc-700 font-bold">
+                        {count} calls
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
+            ) : (
+              <div className="text-center py-8 text-zinc-400 text-xs">
+                No persona calls recorded yet.
+              </div>
+            )}
+            
+            <div className="border-t border-zinc-150 pt-4 bg-zinc-50/50 -mx-4 -mb-4 p-4 rounded-b-2xl">
+              <h4 className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-2 flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Billing System Info
+              </h4>
+              <p className="text-[10px] text-zinc-500 leading-relaxed">
+                Billing records are automatically created in the database at the end of each session. There are no monthly base fees.
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Transactions ledger */}
-        <div className="space-y-4">
-          <h3 className="credits-section-title flex items-center justify-between">
-            <span>Transaction Ledger</span>
-            <span className="text-[10px] text-zinc-500 font-mono flex items-center gap-1">
-              <FileText className="w-3 h-3" /> Recent 4 entries
+        {/* Right: Transactions Ledger */}
+        <div className="lg:col-span-2 space-y-4">
+          <h3 className="credits-section-title text-xs font-mono uppercase tracking-widest text-zinc-500 flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <FileText className="w-4 h-4 text-zinc-650" />
+              Transaction Ledger (Call Logs)
+            </span>
+            <span className="text-[9px] text-zinc-400 font-normal">
+              Showing recent {calls.length} entries
             </span>
           </h3>
-          <div className="bg-white border border-zinc-200 rounded-2xl p-4 divide-y divide-zinc-200 space-y-3.5 shadow-sm">
-            {TRANSACTIONS.map((tx) => (
-              <div key={tx.id} className="flex items-start justify-between pt-3.5 first:pt-0">
-                <div>
-                  <h5 className="text-xs font-medium text-zinc-900">{tx.description}</h5>
-                  <span className="text-[9px] text-zinc-500 font-mono uppercase tracking-wider">{tx.id} · {tx.date}</span>
-                </div>
-                <div className="text-right">
-                  <span className={`text-xs font-mono font-bold ${tx.amount > 0 ? "text-emerald-700" : "text-zinc-700"}`}>
-                    {tx.amount > 0 ? "+" : ""}{formatCredits(tx.amount)}
-                  </span>
-                  <div className="text-[8px] text-emerald-700 font-mono mt-0.5 uppercase font-semibold">{tx.status}</div>
-                </div>
+
+          <div className="bg-white border border-zinc-200 rounded-2xl p-4 divide-y divide-zinc-250 shadow-sm overflow-hidden">
+            {calls.length > 0 ? (
+              <div className="divide-y divide-zinc-200">
+                {calls.map((c) => {
+                  const duration = c.durationSeconds || 0;
+                  const cost = duration * (costPerMinute / 60);
+                  const isOutbound = c.direction === "outbound";
+                  const directionLabel = isOutbound ? "Outbound Call" : "Inbound Call";
+                  
+                  return (
+                    <div key={c.callId} className="flex items-start justify-between py-3.5 first:pt-0 last:pb-0">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded font-mono uppercase font-bold ${
+                            isOutbound 
+                              ? "bg-indigo-50 text-indigo-700 border border-indigo-100" 
+                              : "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                          }`}>
+                            {c.direction}
+                          </span>
+                          <h5 className="text-xs font-bold text-zinc-900">
+                            {directionLabel} to {c.callerNumber || "Unknown Number"}
+                          </h5>
+                        </div>
+                        <p className="text-[10px] text-zinc-500 font-mono">
+                          {c.personaName || "Unknown Persona"} · ID: {c.callId} · {formatDate(c.startedAt)}
+                        </p>
+                      </div>
+                      
+                      <div className="text-right">
+                        <span className="text-xs font-mono font-bold text-zinc-900">
+                          -{formatCurrency(cost)}
+                        </span>
+                        <div className="flex items-center gap-1 justify-end mt-0.5">
+                          <Clock className="w-2.5 h-2.5 text-zinc-400" />
+                          <span className="text-[10px] font-mono text-zinc-500">{formatDuration(duration)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
+            ) : (
+              <div className="text-center py-12 text-zinc-400 text-xs">
+                No transactions recorded yet. Completed calls will appear here automatically.
+              </div>
+            )}
           </div>
         </div>
+
       </div>
     </div>
   );

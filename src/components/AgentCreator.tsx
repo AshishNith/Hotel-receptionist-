@@ -39,39 +39,39 @@ const VOICE_PRESETS = [
 
 const PRESET_TEMPLATES = [
   {
-    title: "COD Confirm",
+    title: "Order Confirm",
     avatar: "📞",
-    role: "COD Confirmation Agent",
-    description: "Calls customers to confirm details, verify the shipping address, and approve/cancel order. Speaks professionally in Hindi.",
-    systemInstruction: "You are Via, the dedicated Cash on Delivery (COD) Confirmation and Address Verification Agent for VeloCart, a premium apparel and clothing brand. Your goal is to call the customer, confirm their order details (including clothing items and sizing), verify their shipping address details, and update the status of the order.\n\nRules & Behaviors:\n1. Greet the customer professionally. Say: \"नमस्ते, मैं VeloCart से वाया बात कर रही हूँ। क्या मेरी बात कस्टमर से हो रही है?\"\n2. Keep the tone professional, polite, direct, and concise (not overly friendly or warm). Speak in Hindi.\n3. If they confirm they are the customer, state the order confirmation details (value, apparel items, and sizing e.g. M, L, XL).\n4. Verify their shipping address by asking exactly in Hindi: \"यह आपके आर्डर का डिलीवरी पता है। क्या मैं इसे इसी तरह कन्फर्म कर दूँ?\"\n5. If they confirm the address is correct as read, call the `verify_shipping_address` tool with isCorrect=true. Then call the `confirm_cod_order` tool with confirmed=true. Thank them professionally and end the call.\n6. If they have address corrections, collect the corrected address and call the `verify_shipping_address` tool with isCorrect=true and correctedAddress. Then call the `confirm_cod_order` tool with confirmed=true. Thank them and end the call.\n7. If they cancel the order (No/Not planning to buy):\n   - Politely ask for the cancellation reason.\n   - Call the `confirm_cod_order` tool with confirmed=false and the reason.\n   - Acknowledge the cancellation professionally and end the call.\n8. Prioritize Hindi for the entire call. Keep statements clear and business-like.",
-    initialGreeting: "नमस्ते, मैं VeloCart से वाया बात कर रही हूँ। क्या मेरी बात कस्टमर से हो रही है?",
+    role: "Order Confirmation Agent",
+    description: "Calls customers after placing an order to confirm details, verify the shipping address, and approve or cancel the order.",
+    systemInstruction: "You are an Order Confirmation and Address Verification Agent. Your goal is to call the customer, confirm their order details, verify their shipping address, and update the order status.\n\nRules & Behaviors:\n1. Greet the customer professionally. Introduce yourself and mention the brand name.\n2. Keep the tone professional, polite, direct, and concise.\n3. If they confirm they are the customer, state the order confirmation details (value, items).\n4. Verify their shipping address by reading it out and asking if it is correct.\n5. If they confirm the address is correct, call the `verify_address` tool with isCorrect=true. Then call the `confirm_order` tool with confirmed=true. Thank them and end the call.\n6. If they have address corrections, collect the corrected address and call the `verify_address` tool with isCorrect=true and correctedAddress. Then call the `confirm_order` tool with confirmed=true.\n7. If they cancel the order:\n   - Politely ask for the cancellation reason.\n   - Call the `confirm_order` tool with confirmed=false and the reason.\n   - Acknowledge the cancellation professionally and end the call.\n8. Keep statements clear and business-like.",
+    initialGreeting: "Hello, I'm calling regarding your recent order. Am I speaking with the right person?",
     accentColor: "emerald"
   },
   {
     title: "Cart Recovery",
     avatar: "🛒",
     role: "Cart Recovery Specialist",
-    description: "Triggers after checkout abandonment to answer objections and offer a 10% discount.",
-    systemInstruction: "You are Neha, the Abandoned Cart Recovery Agent for VeloCart, a premium clothing brand. Your goal is to answer objections regarding fabric quality, size fit, return policies, or shipping costs and help them recover their checkout.\n\nRules & Behaviors:\n1. Greet the customer and mention they left clothing or apparel items in their checkout cart at VeloCart.\n2. Ask if there was any size fit anxiety, fabric choice questions, or checkout issues that prevented them from completing their order.\n3. Be helpful and resolve their objection (e.g. we offer free size exchanges within 15 days, our fabrics are 100% premium cotton, and standard shipping is free above ₹999).\n4. Offer them a limited-time 10% discount to finish the order. Use coupon code 'SAVE10'.\n5. If they accept:\n   - Call the `apply_cart_discount` tool with cartId, discountCode=\"SAVE10\", and discountValue=10.\n   - Tell them the discount has been applied to their cart, and they will receive a link to checkout via SMS/WhatsApp.\n6. If they decline:\n   - Acknowledge politely and thank them for their time.\n7. Keep messages short and conversational. Speak in Hinglish or English.",
-    initialGreeting: "Hi! I noticed you were looking at some clothing items in our store but didn't finish checkout. Is there anything I can help you with?",
+    description: "Contacts customers who abandoned their checkout to answer objections and recover the sale with a limited-time discount.",
+    systemInstruction: "You are a Cart Recovery Agent. Your goal is to contact customers who abandoned their checkout, address their concerns, and help them complete their purchase.\n\nRules & Behaviors:\n1. Greet the customer and mention they left items in their checkout cart.\n2. Ask if there were any concerns that prevented them from completing their order.\n3. Be helpful and resolve their objection clearly and professionally.\n4. Offer them a limited-time 10% discount to finish the order. Use coupon code 'SAVE10'.\n5. If they accept:\n   - Call the `apply_discount` tool with the cartId, discountCode=\"SAVE10\", and discountValue=10.\n   - Tell them the discount has been applied and they will receive a checkout link.\n6. If they decline:\n   - Acknowledge politely and thank them for their time.\n7. Keep messages short and conversational.",
+    initialGreeting: "Hi! I noticed you were looking at some items but didn't finish checkout. Is there anything I can help you with?",
     accentColor: "indigo"
   },
   {
-    title: "RTO Feedback",
+    title: "Delivery Feedback",
     avatar: "📦",
-    role: "RTO & Feedback Agent",
-    description: "Calls after a delivery failure (NDR) to schedule a re-attempt, or post-delivery to capture satisfaction ratings.",
-    systemInstruction: "You are Raj, the Post-Delivery Feedback and RTO (Return to Origin) Prevention Agent for VeloCart, a premium clothing brand.\n\nRules & Behaviors:\n1. Check the delivery status:\n   - If the delivery failed (NDR - Non-Delivery Report):\n     - Politely explain that our courier partner was unable to deliver their order.\n     - Coordinate a re-attempt date and time slot (morning/afternoon/evening) with them.\n     - Call the `schedule_redelivery` tool to log the date and time.\n     - Confirm that a delivery agent will re-attempt delivery at that time.\n   - If the order was successfully delivered:\n     - Ask them how the apparel fits (perfect, too loose, too tight) and if they are satisfied with the fabric quality.\n     - Ask them to rate their satisfaction with the product on a scale of 1 to 5.\n     - Ask if they have any feedback or issues.\n     - Call the `record_delivery_feedback` tool with their rating and comments.\n2. Be polite, reassuring, and helpful. Speak in Hindi/English.",
-    initialGreeting: "Hello, this is VeloCart Delivery Support. I'm calling regarding your recent shipment.",
+    role: "Delivery & Feedback Agent",
+    description: "Calls after a delivery failure to schedule a re-attempt, or post-delivery to capture satisfaction ratings.",
+    systemInstruction: "You are a Post-Delivery Feedback and RTO Prevention Agent.\n\nRules & Behaviors:\n1. Check the delivery status:\n   - If the delivery failed:\n     - Politely explain that the courier was unable to deliver their order.\n     - Coordinate a re-attempt date and time slot (morning/afternoon/evening).\n     - Call the `schedule_redelivery` tool to log the date and time.\n   - If the order was successfully delivered:\n     - Ask how satisfied they are with the product.\n     - Ask them to rate their satisfaction on a scale of 1 to 5.\n     - Call the `record_delivery_feedback` tool with their rating and comments.\n2. Be polite, reassuring, and helpful.",
+    initialGreeting: "Hello, I'm calling regarding your recent delivery. I'd like to check in with you.",
     accentColor: "rose"
   },
   {
     title: "Inbound Support",
     avatar: "💁‍♀️",
-    role: "Support Desk Assistant",
-    description: "Handles incoming customer inquiries, answers FAQs (return policies, warranty), and provides live tracking updates.",
-    systemInstruction: "You are Priya, the Customer Support and Order Tracking Agent for VeloCart clothing brand.\n\nRules & Behaviors:\n1. Greet the customer. Help them with order tracking, sizing charts, fabric care, or store policy FAQs.\n2. If they ask about order tracking/status:\n   - Ask for their Order ID (e.g. OD-4821).\n   - Call the `track_order_shipment` tool to fetch tracking info.\n   - Read the status, courier details, and estimated delivery date to them.\n3. If they ask general questions (sizing charts, return and exchange policy for clothes, fabric care/washing instructions, shipping time, COD fees):\n   - Call the `get_store_faq` tool with their question to query the database.\n   - Provide the factual answer clearly.\n4. If they are frustrated, angry, or ask for a supervisor, or if their query is too complex:\n   - Reassure them and call the `escalate_to_human` tool to route them to a live support representative.\n5. Always be polite, clear, and efficient.",
-    initialGreeting: "Thanks for calling VeloCart Support! How can I assist you with your order status, size exchanges, or fabric care today?",
+    role: "Customer Support Agent",
+    description: "Handles incoming support inquiries, answers FAQs, and provides order tracking updates.",
+    systemInstruction: "You are a Customer Support and Order Tracking Agent.\n\nRules & Behaviors:\n1. Greet the customer warmly. Help them with order tracking, product info, or policy FAQs.\n2. If they ask about order tracking/status:\n   - Ask for their Order ID.\n   - Call the `track_order_shipment` tool to fetch tracking info.\n   - Read the status, courier details, and estimated delivery date.\n3. If they ask general questions:\n   - Call the `get_store_faq` tool with their question.\n   - Provide the factual answer clearly.\n4. If they are frustrated or ask for a supervisor:\n   - Reassure them and call the `escalate_to_human` tool.\n5. Always be polite, clear, and efficient.",
+    initialGreeting: "Thank you for calling! How can I assist you today?",
     accentColor: "cyan"
   }
 ];
@@ -95,6 +95,8 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
   const [silenceTimeout, setSilenceTimeout] = useState<number>(30);
   const [temperature, setTemperature] = useState<number>(0.7);
   const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBase[]>([]);
+  const [enabledTools, setEnabledTools] = useState<string[]>([]);
+  const [availableTools, setAvailableTools] = useState<{name: string; description: string}[]>([]);
 
   // Fetch knowledge bases from server on mount
   useEffect(() => {
@@ -110,6 +112,20 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
       }
     }
     fetchKBs();
+
+    // Fetch available tools
+    async function fetchTools() {
+      try {
+        const res = await fetch("/api/tools");
+        const json = await res.json();
+        if (json.success && json.data) {
+          setAvailableTools(json.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch tools:", err);
+      }
+    }
+    fetchTools();
   }, []);
 
   // Populate form if editing
@@ -128,6 +144,7 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
       setAmbientSound(editingPersona.ambientSound || "none");
       setSilenceTimeout(editingPersona.silenceTimeout || 30);
       setTemperature(editingPersona.temperature || 0.7);
+      setEnabledTools(editingPersona.enabledTools || []);
     } else {
       // Auto generate random phone number & default values
       const randomPhone = `+1 (555) ${Math.floor(100 + Math.random() * 900)}-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -229,7 +246,8 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
       knowledgeBaseId: knowledgeBaseId || undefined,
       ambientSound,
       silenceTimeout,
-      temperature
+      temperature,
+      enabledTools: enabledTools.length > 0 ? enabledTools : undefined,
     };
 
     onSaveAgent(savedAgent);
@@ -478,7 +496,60 @@ export const AgentCreator: React.FC<AgentCreatorProps> = ({
               </select>
             </div>
 
-            {/* Ambient Sound Dropdown */}
+            {/* Enabled Tools Multi-Select */}
+            {availableTools.length > 0 && (
+              <div>
+                <label className="block text-xs font-mono uppercase tracking-widest text-zinc-500 mb-2">
+                  <Wrench className="inline w-3.5 h-3.5 mr-1" />
+                  Enabled Tools
+                </label>
+                <div className="bg-zinc-50 p-3 rounded-2xl border border-zinc-200 max-h-[180px] overflow-y-auto custom-scrollbar space-y-1.5">
+                  <div className="flex items-center gap-2 mb-2 pb-2 border-b border-zinc-200">
+                    <button
+                      type="button"
+                      onClick={() => setEnabledTools(availableTools.map(t => t.name))}
+                      className="text-[10px] font-mono uppercase px-2 py-1 rounded-lg bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-100 cursor-pointer"
+                    >
+                      Select All
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEnabledTools([])}
+                      className="text-[10px] font-mono uppercase px-2 py-1 rounded-lg bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-100 cursor-pointer"
+                    >
+                      Deselect All
+                    </button>
+                    <span className="text-[9px] text-zinc-400 ml-auto">
+                      {enabledTools.length === 0 ? "All tools" : `${enabledTools.length} selected`}
+                    </span>
+                  </div>
+                  {availableTools.map((tool) => {
+                    const isChecked = enabledTools.includes(tool.name);
+                    return (
+                      <label key={tool.name} className="flex items-start gap-2.5 p-2 rounded-xl hover:bg-white cursor-pointer transition">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            if (isChecked) {
+                              setEnabledTools(enabledTools.filter(t => t !== tool.name));
+                            } else {
+                              setEnabledTools([...enabledTools, tool.name]);
+                            }
+                          }}
+                          className="mt-0.5 accent-zinc-950"
+                        />
+                        <div>
+                          <span className="text-xs font-mono text-zinc-800">{tool.name}</span>
+                          <p className="text-[10px] text-zinc-500 leading-snug">{tool.description}</p>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+                <p className="text-[9px] font-mono text-zinc-400 uppercase mt-1">Empty = all tools enabled for this agent</p>
+              </div>
+            )}
             <div>
               <label className="block text-xs font-mono uppercase tracking-widest text-zinc-500 mb-2">
                 Ambient Background Noise

@@ -44,13 +44,17 @@ export async function initiateOutboundCall(
   appUrl: string,
   bookingId?: string
 ): Promise<OutboundCallState> {
-  if (!VOBIZ_AUTH_ID || !VOBIZ_AUTH_TOKEN) {
-    throw new Error("VoBiz credentials not configured. Set VOBIZ_AUTH_ID and VOBIZ_AUTH_TOKEN in .env");
-  }
+  const { getDynamicSettings } = await import("../config.js");
+  const settings = await getDynamicSettings();
+  const authId = settings.vobizAuthId;
+  const authToken = settings.vobizAuthToken;
+  const fromNumber = settings.vobizFromNumber;
 
-  const fromNumber = VOBIZ_FROM_NUMBER;
+  if (!authId || !authToken) {
+    throw new Error("VoBiz credentials not configured. Please set them in the Settings page.");
+  }
   if (!fromNumber) {
-    throw new Error("VOBIZ_FROM_NUMBER not configured in .env");
+    throw new Error("VoBiz From Number not configured. Please set it in the Settings page.");
   }
 
   const callId = generateCallId();
@@ -71,12 +75,12 @@ export async function initiateOutboundCall(
     hangup_method: "POST",
   };
 
-  const response = await fetch(`${VOBIZ_API_BASE}/Account/${VOBIZ_AUTH_ID}/Call/`, {
+  const response = await fetch(`${VOBIZ_API_BASE}/Account/${authId}/Call/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Auth-ID": VOBIZ_AUTH_ID,
-      "X-Auth-Token": VOBIZ_AUTH_TOKEN,
+      "X-Auth-ID": authId,
+      "X-Auth-Token": authToken,
     },
     body: JSON.stringify(requestBody),
   });
@@ -169,13 +173,22 @@ export async function hangupOutboundCall(callId: string): Promise<boolean> {
   if (!call || !call.callUUID) return false;
 
   try {
+    const { getDynamicSettings } = await import("../config.js");
+    const settings = await getDynamicSettings();
+    const authId = settings.vobizAuthId;
+    const authToken = settings.vobizAuthToken;
+
+    if (!authId || !authToken) {
+      throw new Error("VoBiz credentials not configured. Please set them in the Settings page.");
+    }
+
     const response = await fetch(
-      `${VOBIZ_API_BASE}/Account/${VOBIZ_AUTH_ID}/Call/${call.callUUID}/`,
+      `${VOBIZ_API_BASE}/Account/${authId}/Call/${call.callUUID}/`,
       {
         method: "DELETE",
         headers: {
-          "X-Auth-ID": VOBIZ_AUTH_ID,
-          "X-Auth-Token": VOBIZ_AUTH_TOKEN,
+          "X-Auth-ID": authId,
+          "X-Auth-Token": authToken,
         },
       }
     );

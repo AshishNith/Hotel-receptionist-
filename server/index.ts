@@ -17,6 +17,9 @@ import telephonyRoutes from "./routes/telephony.js";
 import analyticsRoutes from "./routes/analytics.js";
 import healthRoutes from "./routes/health.js";
 import toolsRoutes from "./routes/tools.js";
+import settingsRoutes from "./routes/settings.js";
+import campaignsRoutes from "./routes/campaigns.js";
+import { getGlobalSettings } from "./models/Settings.js";
 
 // WebSocket handlers
 import { handleBrowserWebSocket } from "./handlers/browserWs.js";
@@ -37,6 +40,8 @@ app.use("/api", telephonyRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/health", healthRoutes);
 app.use("/api/tools", toolsRoutes);
+app.use("/api/settings", settingsRoutes);
+app.use("/api/campaigns", campaignsRoutes);
 
 // ─── WebSocket Servers ──────────────────────────────────────────
 const wssBrowser = new WebSocketServer({ noServer: true });
@@ -84,6 +89,9 @@ async function initializeServer() {
     console.log("[DB] Connecting to MongoDB...");
     await connectDatabase();
     await seedDefaultPersonas();
+    // Seed default settings if none exist
+    const settings = await getGlobalSettings();
+    console.log(`[Seed] Global settings loaded/created (brand: ${settings.brand.name})`);
   } catch (dbErr) {
     console.error("[DB] Connection failed:", dbErr);
   }

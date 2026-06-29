@@ -28,6 +28,7 @@ export interface Persona {
   ambientSound?: "none" | "office" | "cafe" | "airport";
   silenceTimeout?: number;
   temperature?: number;
+  enabledTools?: string[];
 }
 
 export type CallState = "idle" | "calling" | "connected" | "ended" | "error";

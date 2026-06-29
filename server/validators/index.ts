@@ -63,6 +63,21 @@ export function validatePersona(persona: any): string | null {
     }
   }
 
+  // Validate enabledTools (optional array of tool name strings)
+  if (persona.enabledTools != null) {
+    if (!Array.isArray(persona.enabledTools)) {
+      return "Field 'enabledTools' must be an array of strings";
+    }
+    if (persona.enabledTools.length > 50) {
+      return "Field 'enabledTools' must have at most 50 entries";
+    }
+    for (const tool of persona.enabledTools) {
+      if (typeof tool !== "string" || tool.length > 100) {
+        return "Each entry in 'enabledTools' must be a string up to 100 characters";
+      }
+    }
+  }
+
   return null;
 }
 

@@ -1,6 +1,6 @@
 import type { WebSocket } from "ws";
 import type { LiveServerMessage } from "@google/genai";
-import { getGeminiClient, getCompiledSystemInstruction, allToolDeclarations, GEMINI_MODEL, Modality } from "../services/gemini.js";
+import { getGeminiClient, getCompiledSystemInstruction, getToolsForPersona, GEMINI_MODEL, Modality } from "../services/gemini.js";
 import { executeToolCalls } from "../services/toolExecutor.js";
 import { CallLogger } from "../services/callLogger.js";
 import { base64ToInt16Array, resampleInt16Pcm } from "../services/audioCodec.js";
@@ -53,7 +53,7 @@ export async function handleBrowserWebSocket(clientWs: WebSocket): Promise<void>
         const googlePhoneKey = message.googlePhoneKey || "default";
         const personaId = message.personaId || "unknown";
         const personaName = message.personaName || "Unknown Agent";
-        const initialGreeting = message.initialGreeting || "Welcome to VeloCart support! How may I assist you today?";
+        const initialGreeting = message.initialGreeting || "Hello! How may I assist you today?";
 
         // Initialize call logger
         callLogger = new CallLogger(personaId, personaName, "browser-user", "browser", "outbound");
@@ -169,7 +169,7 @@ export async function handleBrowserWebSocket(clientWs: WebSocket): Promise<void>
               temperature,
               inputAudioTranscription: {},
               outputAudioTranscription: {},
-              tools: [{ functionDeclarations: allToolDeclarations }],
+              tools: [{ functionDeclarations: getToolsForPersona(message.enabledTools) }],
             },
           });
 
@@ -186,10 +186,7 @@ export async function handleBrowserWebSocket(clientWs: WebSocket): Promise<void>
           setTimeout(() => {
             try {
               if (geminiSession && sessionAlive) {
-                let greetingText = `Call connected. Greet the caller now warmly using your initial greeting: "${initialGreeting}"`;
-                if (personaId === "cod_confirm") {
-                  greetingText = `Call connected. Greet the customer professionally in Hindi by saying exactly: "नमस्ते, मैं VeloCart से वाया बात कर रही हूँ। क्या मेरी बात कस्टमर से हो रही है?" Do not ask how you can help them. Keep the tone professional, polite, direct, and concise.`;
-                }
+                const greetingText = `Call connected. Greet the caller now warmly using your initial greeting: "${initialGreeting}"`;
 
                 geminiSession.sendClientContent({
                   turns: [{

@@ -52,10 +52,10 @@ export async function getCompiledSystemInstruction(
   }
 }
 
-export const ecommerceTools: FunctionDeclaration[] = [
+export const agentTools: FunctionDeclaration[] = [
   {
-    name: "confirm_cod_order",
-    description: "Confirms or cancels a Cash on Delivery (COD) order based on the customer's response.",
+    name: "confirm_order",
+    description: "Confirms or cancels an order based on the customer's response.",
     parametersJsonSchema: {
       type: Type.OBJECT,
       properties: {
@@ -67,7 +67,7 @@ export const ecommerceTools: FunctionDeclaration[] = [
     }
   },
   {
-    name: "verify_shipping_address",
+    name: "verify_address",
     description: "Verifies the correctness of the customer's shipping address or records corrections.",
     parametersJsonSchema: {
       type: Type.OBJECT,
@@ -80,7 +80,7 @@ export const ecommerceTools: FunctionDeclaration[] = [
     }
   },
   {
-    name: "apply_cart_discount",
+    name: "apply_discount",
     description: "Applies a promotional recovery discount code to the customer's abandoned checkout cart.",
     parametersJsonSchema: {
       type: Type.OBJECT,
@@ -142,7 +142,7 @@ export const ecommerceTools: FunctionDeclaration[] = [
   },
   {
     name: "get_store_faq",
-    description: "Queries the store FAQ knowledge base to answer customer questions regarding returns, shipping fees, delivery times, warranty, etc.",
+    description: "Queries the FAQ knowledge base to answer customer questions regarding returns, shipping, delivery times, policies, etc.",
     parametersJsonSchema: {
       type: Type.OBJECT,
       properties: {
@@ -204,9 +204,20 @@ export const googleWorkspaceTools: FunctionDeclaration[] = [
 ];
 
 export const allToolDeclarations: FunctionDeclaration[] = [
-  ...ecommerceTools,
+  ...agentTools,
   ...googleWorkspaceTools,
 ];
+
+/**
+ * Returns filtered tool declarations for a specific persona.
+ * If enabledTools is undefined/empty, returns all tools (backward compatible).
+ */
+export function getToolsForPersona(enabledTools?: string[]): FunctionDeclaration[] {
+  if (!enabledTools || enabledTools.length === 0) {
+    return allToolDeclarations;
+  }
+  return allToolDeclarations.filter((t) => enabledTools.includes(t.name));
+}
 
 /** Model identifier used for Gemini Live connections. */
 export { GEMINI_MODEL };

@@ -1,6 +1,6 @@
 import { google } from "googleapis";
 import { GoogleTokenModel } from "../models/GoogleToken.js";
-import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI } from "../config.js";
+import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI, getDynamicSettings } from "../config.js";
 import type { CallLogger } from "./callLogger.js";
 import {
   confirmCodOrder,
@@ -194,8 +194,8 @@ export async function executeToolCalls(
           break;
         }
 
-        // ─── E-commerce DTC Tools ───
-        case "confirm_cod_order": {
+        // ─── Agent Tools ───
+        case "confirm_order": {
           const { orderId, confirmed, reason } = fc.args;
           if (orderId && orderId.toUpperCase().startsWith("DEMO-")) {
             console.log(`[ToolExecutor] [DEMO MODE] Skip database write for ${orderId}`);
@@ -220,16 +220,18 @@ export async function executeToolCalls(
                 if (!activeAuth) return;
 
                 const gmail = google.gmail({ version: "v1", auth: activeAuth });
-                const subject = `Order ${orderId} Update - VeloCart`;
+                const dynSettings = await getDynamicSettings();
+                const brandName = dynSettings.brandName;
+                const subject = `Order ${orderId} Update - ${brandName}`;
                 const body = `
-                  <h3>Your VeloCart Order status has been updated!</h3>
+                  <h3>Your order status has been updated!</h3>
                   <p>Dear ${orderDetails.customerName},</p>
-                  <p>Your Cash on Delivery order <strong>${orderId}</strong> status is now: <strong>${orderResponse.status}</strong>.</p>
+                  <p>Your order <strong>${orderId}</strong> status is now: <strong>${orderResponse.status}</strong>.</p>
                   <p>Shipping Details: ${orderDetails.shippingAddress}</p>
                   <p>Total Value: Rs. ${orderDetails.orderValue}</p>
                   <br/>
-                  <p>Thank you for shopping with us!</p>
-                  <p>Best Regards,<br/>Via - VeloCart Support Team</p>
+                  <p>Thank you for your purchase!</p>
+                  <p>Best Regards,<br/>${brandName} Support Team</p>
                 `;
                 const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString("base64")}?=`;
                 const messageParts = [
@@ -252,7 +254,7 @@ export async function executeToolCalls(
           break;
         }
 
-        case "verify_shipping_address": {
+        case "verify_address": {
           const { orderId, correctedAddress, isCorrect } = fc.args;
           if (orderId && orderId.toUpperCase().startsWith("DEMO-")) {
             console.log(`[ToolExecutor] [DEMO MODE] Skip database write for ${orderId}`);
@@ -260,7 +262,7 @@ export async function executeToolCalls(
               success: true,
               orderId,
               isCorrect,
-              shippingAddress: correctedAddress || "Flat 402, Royal Palms, Sector 62, Noida, UP - 201301"
+              shippingAddress: correctedAddress || "Demo Address - Updated via call"
             };
           } else {
             response = await verifyShippingAddress(orderId, correctedAddress, isCorrect);
@@ -268,7 +270,7 @@ export async function executeToolCalls(
           break;
         }
 
-        case "apply_cart_discount": {
+        case "apply_discount": {
           const { cartId, discountCode, discountValue } = fc.args;
           if (cartId && cartId.toUpperCase().startsWith("DEMO-")) {
             console.log(`[ToolExecutor] [DEMO MODE] Skip database write for ${cartId}`);

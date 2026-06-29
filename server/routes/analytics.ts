@@ -84,8 +84,14 @@ router.get("/stats", async (_req, res) => {
     const answeredCount = completedCalls.length;
     const answerRate = totalCalls > 0 ? Math.round((answeredCount / totalCalls) * 100) : 84;
 
-    const apiConsumption = Math.round(totalDurationSeconds * 0.025); // ₹1.5 (or 0.025 credits) per second
-    const walletBalance = 1000000 - apiConsumption;
+    // Pull billing config from dynamic Settings
+    const { getGlobalSettings } = await import("../models/Settings.js");
+    const settingsDoc = await getGlobalSettings();
+    const ratePerMinute = settingsDoc?.credits?.costPerMinute ?? 1.5;
+    const ratePerSecond = ratePerMinute / 60;
+
+    const apiConsumption = Math.round(totalDurationSeconds * ratePerSecond * 100) / 100;
+    const walletBalance = (settingsDoc?.credits?.walletBalance ?? 100000) - apiConsumption;
     const avgCostPerCall = totalCalls > 0 ? (apiConsumption / totalCalls).toFixed(2) : "0.00";
 
     res.json({

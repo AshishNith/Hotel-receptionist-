@@ -13,21 +13,8 @@ const router = Router();
 // ─── Twilio TwiML webhook ───────────────────────────────────────
 
 router.all("/twilio/incoming-call", (req, res) => {
-  const appUrl = getPublicAppUrl(req);
-  const streamUrl = appUrl.replace(/^http:/, "ws:").replace(/^https:/, "wss:");
-  const targetId = req.query.personaId || "cod_confirm";
-  const callerNumber = encodeURIComponent(req.body?.From || req.query.From || "");
-
-  console.log(`[Webhook] Inbound call received on Twilio endpoint! Target: ${targetId}, From: ${callerNumber}`);
-
-  res.type("text/xml");
-  res.send(`<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say voice="Polly.Aditi">Connecting you to AI Voice Studio. Please speak naturally.</Say>
-  <Connect>
-    <Stream url="${streamUrl}/api/twilio/live?personaId=${targetId}&amp;callerNumber=${callerNumber}" />
-  </Connect>
-</Response>`);
+  console.log(`[Webhook] Twilio inbound call rejected: Twilio integration is dormant.`);
+  res.status(503).send("Twilio integration is dormant. Use VoBiz SIP telephony instead.");
 });
 
 // ─── Vobiz / SIP webhook (Inbound) ─────────────────────────────

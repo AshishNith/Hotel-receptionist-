@@ -40,6 +40,7 @@ router.post("/", async (req, res) => {
     silenceTimeout: agent.silenceTimeout || 30,
     temperature: typeof agent.temperature === "number" ? agent.temperature : 0.7,
     isDefault: agent.id.trim() === "cod_confirm" || !!agent.isDefault,
+    enabledTools: agent.enabledTools,
   };
 
   try {

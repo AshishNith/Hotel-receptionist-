@@ -40,3 +40,24 @@ export async function connectDatabase(): Promise<void> {
   await mongoose.connect(MONGODB_URI);
   console.log("[DB] Connected successfully to MongoDB!");
 }
+
+// ─── Dynamic Settings Reader ────────────────────────────────────
+// Reads from MongoDB Settings document, falling back to .env values.
+// Import dynamically to avoid circular dependency at module load time.
+export async function getDynamicSettings() {
+  const { getGlobalSettings } = await import("./models/Settings.js");
+  const settings = await getGlobalSettings();
+
+  return {
+    vobizAuthId:     settings.vobiz?.authId || VOBIZ_AUTH_ID,
+    vobizAuthToken:  settings.vobiz?.authToken || VOBIZ_AUTH_TOKEN,
+    vobizFromNumber: settings.vobiz?.fromNumber || VOBIZ_FROM_NUMBER,
+    geminiApiKey:    settings.gemini?.apiKey || GEMINI_API_KEY,
+    geminiModel:     settings.gemini?.model || GEMINI_MODEL,
+    sheetsId:        settings.googleSheets?.spreadsheetId || GOOGLE_SHEETS_SPREADSHEET_ID,
+    costPerMinute:   settings.credits?.costPerMinute ?? 1.5,
+    walletBalance:   settings.credits?.walletBalance ?? 100000,
+    brandName:       settings.brand?.name || "VoiceLink",
+    brandTagline:    settings.brand?.tagline || "AI Call Automation Platform",
+  };
+}

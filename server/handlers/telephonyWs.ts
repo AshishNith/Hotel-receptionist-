@@ -1,6 +1,6 @@
 import { WebSocket } from "ws";
 import type { LiveServerMessage } from "@google/genai";
-import { getGeminiClient, getCompiledSystemInstruction, allToolDeclarations, GEMINI_MODEL, Modality } from "../services/gemini.js";
+import { getGeminiClient, getCompiledSystemInstruction, getToolsForPersona, GEMINI_MODEL, Modality } from "../services/gemini.js";
 import { executeToolCalls } from "../services/toolExecutor.js";
 import { CallLogger } from "../services/callLogger.js";
 import { PersonaModel } from "../models/Persona.js";
@@ -26,7 +26,7 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
 
   logToFile(`[${providerName} WS] Connection initiated. Path: ${upgradeUrl.pathname}, Query: ${upgradeUrl.search}`);
 
-  const personaId = upgradeUrl.searchParams.get("personaId") || "cod_confirm";
+  const personaId = upgradeUrl.searchParams.get("personaId") || "order_confirm";
   const callerNumber = decodeURIComponent(upgradeUrl.searchParams.get("callerNumber") || "");
   const outboundCallId = upgradeUrl.searchParams.get("callId") || "";
   const direction = (upgradeUrl.searchParams.get("direction") || "inbound") as "inbound" | "outbound";
@@ -68,9 +68,9 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
         try {
           let greetingText = "";
           if (order) {
-            greetingText = `Call connected. Greet the customer professionally in Hindi by saying exactly: "नमस्ते, मैं VeloCart से वाया बात कर रही हूँ। क्या मेरी बात ${order.customerName} से हो रही है?" Do not ask how you can help them. Keep the tone professional, polite, direct, and concise.`;
+            greetingText = `Call connected. Greet the customer professionally using your initial greeting. You are calling ${order.customerName} to confirm their order. Start by confirming you are speaking with the right person.`;
           } else if (cart) {
-            greetingText = `Call connected. Greet the customer warmly using your initial greeting: "Hi ${cart.customerName}! I noticed you were looking at some clothing items in our store but didn't finish checkout. Is there anything I can help you with?"`;
+            greetingText = `Call connected. Greet the customer warmly. You are calling ${cart.customerName} about items left in their cart. Start by mentioning you noticed they didn't finish checkout.`;
           } else {
             greetingText = `Call connected. Greet the caller using your initial greeting: "${persona.initialGreeting}"`;
           }
@@ -116,22 +116,22 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
       }
 
       if (isDemoCall) {
-        logToFile(`[${providerName} WS] Running in DEMO MODE. Injected Shruti demo order context.`);
+        logToFile(`[${providerName} WS] Running in DEMO MODE. Injected demo order context.`);
         order = {
           orderId: "DEMO-1001",
-          customerName: "Shruti",
+          customerName: "Customer",
           orderValue: 1499,
           paymentMethod: "COD",
-          shippingAddress: "Flat 402, Royal Palms, Sector 62, Noida, UP - 201301",
-          phone: callerNumber || "+91 99342-DEMO",
-          email: "shruti@example.com"
+          shippingAddress: "Demo Address - Please update via dashboard",
+          phone: callerNumber || "+91 00000-DEMO",
+          email: "demo@example.com"
         };
       }
 
       if (order) {
         logToFile(`[${providerName} WS] Found order confirmation context for ${order.orderId} (${order.customerName})! Injected instruction.`);
         customEcommerceInstruction = `\n\n### CRITICAL CALL OUTBOUND MISSION: ORDER CONFIRMATION & ADDRESS VERIFICATION
-You are Via, the dedicated Cash on Delivery (COD) Confirmation and Address Verification Agent for VeloCart. You are actively calling the customer ${order.customerName} on their phone number to confirm their recent Cash on Delivery order.
+You are the Order Confirmation and Address Verification Agent. You are actively calling the customer ${order.customerName} on their phone number to confirm their recent order.
 Order ID: ${order.orderId}
 Customer Name: ${order.customerName}
 Order Value: Rs. ${order.orderValue}
@@ -139,24 +139,24 @@ Payment Method: ${order.paymentMethod}
 Shipping Address: ${order.shippingAddress}
 
 Your strict conversational goal:
-1. Greet the customer professionally in Hindi: "नमस्ते, मैं VeloCart से वाया बात कर रही हूँ। क्या मेरी बात ${order.customerName} से हो रही है?" Keep the tone professional, polite, direct, and concise (not overly friendly or warm). Speak in Hindi.
+1. Greet the customer professionally. Start by confirming you are speaking with ${order.customerName}. Keep the tone professional, polite, direct, and concise.
 2. If they confirm they are the customer, state the order confirmation details (items, value of Rs. ${order.orderValue}).
 3. Ask if they wish to confirm their order.
-4. Verify their shipping address by asking exactly in Hindi: "यह आपके आर्डर का डिलीवरी पता है। क्या मैं इसे इसी तरह कन्फर्म कर दूँ?"
-5. If they confirm the address is correct as read, call the \`verify_shipping_address\` tool with isCorrect=true. Then call the \`confirm_cod_order\` tool with confirmed=true. Thank them professionally and end the call.
-6. If they have address corrections, collect the corrected address and call the \`verify_shipping_address\` tool with isCorrect=true and correctedAddress. Then call the \`confirm_cod_order\` tool with confirmed=true. Thank them and end the call.
+4. Verify their shipping address by reading it out and asking if it is correct.
+5. If they confirm the address is correct, call the \`verify_address\` tool with isCorrect=true. Then call the \`confirm_order\` tool with confirmed=true. Thank them professionally and end the call.
+6. If they have address corrections, collect the corrected address and call the \`verify_address\` tool with isCorrect=true and correctedAddress. Then call the \`confirm_order\` tool with confirmed=true. Thank them and end the call.
 7. If they cancel the order (No/Not planning to buy):
    - Politely ask for the cancellation reason.
-   - Call the \`confirm_cod_order\` tool with confirmed=false and the reason.
+   - Call the \`confirm_order\` tool with confirmed=false and the reason.
    - Acknowledge the cancellation professionally and end the call.
-8. Prioritize Hindi for the entire call. Keep statements clear and business-like.
+8. Keep statements clear and business-like.
 `;
       } else {
         cart = await getCartDetails(bookingId);
         if (cart) {
           logToFile(`[${providerName} WS] Found cart recovery context for ${cart.cartId} (${cart.customerName})! Injected instruction.`);
           customEcommerceInstruction = `\n\n### CRITICAL CALL OUTBOUND MISSION: ABANDONED CART RECOVERY
-You are calling the customer ${cart.customerName} to help them complete their abandoned checkout at VeloCart.
+You are calling the customer ${cart.customerName} to help them complete their abandoned checkout.
 Cart ID: ${cart.cartId}
 Items: ${cart.items}
 Cart Value: Rs. ${cart.cartValue}
@@ -164,10 +164,10 @@ Cart Value: Rs. ${cart.cartValue}
 Your strict conversational goal:
 1. Greet the customer and mention they left items (${cart.items}) in their shopping cart.
 2. Politely inquire if there was any issue that prevented them from finishing checkout.
-3. Address their objections (free shipping above ₹999, free returns for 15 days).
+3. Address their objections (free shipping, free returns).
 4. Offer them a 10% discount coupon 'SAVE10' to complete the order today.
 5. If they accept:
-   - Call \`apply_cart_discount\` with cartId="${cart.cartId}", discountCode="SAVE10", and discountValue=10.
+   - Call \`apply_discount\` with cartId="${cart.cartId}", discountCode="SAVE10", and discountValue=10.
    - Reassure them that the discount is applied, and a checkout link is being sent to their number.
 6. If they decline:
    - Acknowledge politely and thank them for their time.
@@ -290,7 +290,7 @@ Your strict conversational goal:
         temperature,
         inputAudioTranscription: {},
         outputAudioTranscription: {},
-        tools: [{ functionDeclarations: allToolDeclarations }],
+        tools: [{ functionDeclarations: getToolsForPersona(persona.enabledTools) }],
       },
     });
 

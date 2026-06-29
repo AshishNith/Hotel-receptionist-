@@ -29,7 +29,7 @@ export async function generateCallSummary(callId: string): Promise<string> {
 
     // 3. Formulate the summarization prompt
     const prompt = `
-You are a highly efficient assistant for a premium DTC and e-commerce brand. Review the phone call transcript below between a Store AI Calling Agent ("AGENT") and a customer/caller ("USER").
+You are a highly efficient assistant for a business AI calling platform. Review the phone call transcript below between an AI Calling Agent ("AGENT") and a customer/caller ("USER").
 Generate a concise, professional summary formatted with clear headers and bullet points.
 
 Requirements:
@@ -75,18 +75,18 @@ ${transcriptText}
       let cartStatusUpdate: string | null = null;
 
       // Check tool calls
-      const confirmToolCall = call.toolCallsUsed.find(tc => tc.name === "confirm_cod_order" && tc.args?.orderId);
+      const confirmToolCall = call.toolCallsUsed.find(tc => tc.name === "confirm_order" && tc.args?.orderId);
       if (confirmToolCall) {
         resolvedOrderId = confirmToolCall.args.orderId;
         orderStatusUpdate = confirmToolCall.result?.status || (confirmToolCall.args.confirmed ? "COD Confirmed" : "COD Cancelled");
       }
 
-      const verifyAddressToolCall = call.toolCallsUsed.find(tc => tc.name === "verify_shipping_address" && tc.args?.orderId);
+      const verifyAddressToolCall = call.toolCallsUsed.find(tc => tc.name === "verify_address" && tc.args?.orderId);
       if (verifyAddressToolCall) {
         resolvedOrderId = verifyAddressToolCall.args.orderId;
       }
 
-      const discountToolCall = call.toolCallsUsed.find(tc => tc.name === "apply_cart_discount" && tc.args?.cartId);
+      const discountToolCall = call.toolCallsUsed.find(tc => tc.name === "apply_discount" && tc.args?.cartId);
       if (discountToolCall) {
         resolvedCartId = discountToolCall.args.cartId;
         cartStatusUpdate = "Recovered";
@@ -120,7 +120,7 @@ ${transcriptText}
         if (match) resolvedCartId = match[0].toUpperCase();
       }
 
-      const appUrl = process.env.APP_URL || "https://ecom-calling-agent.onrender.com";
+      const appUrl = process.env.APP_URL || "";
       const absoluteRecordingUrl = call.recordingUrl ? `${appUrl.replace(/\/$/, "")}${call.recordingUrl}` : "";
 
       const { updateOrderWithCallSummary, updateCartWithCallSummary } = await import("./ecommerceService.js");

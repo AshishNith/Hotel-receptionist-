@@ -1,6 +1,6 @@
 // ─── Client Configuration System ────────────────────────────────
-// Change these values to white-label the dashboard for any client.
-// This single file controls branding, colors, features, and user info.
+// Default/fallback values used when the server settings API is unavailable.
+// In production, all values are fetched from MongoDB via /api/settings.
 
 export interface ClientBrand {
   name: string;
@@ -26,7 +26,6 @@ export interface ClientFeatures {
   knowledgeBases: boolean;
   analytics: boolean;
   outboundCalling: boolean;
-  clientPortal: boolean;
 }
 
 export interface ClientCredits {
@@ -49,19 +48,19 @@ export interface ClientConfig {
   user: ClientUser;
 }
 
-// ─── Default Configuration ──────────────────────────────────────
-// Modify this to change the dashboard for different clients.
+// ─── Default Configuration (Fallback Only) ──────────────────────
+// These values are used before the server settings load.
+// Actual values come from MongoDB Settings via /api/settings.
 
 const clientConfig: ClientConfig = {
   brand: {
     name: "VoiceLink",
-    tagline: "DTC Call Automation & COD Confirmation",
+    tagline: "AI Call Automation Platform",
     logoInitials: "VL",
-    logoUrl: "https://res.cloudinary.com/dvwpxb2oa/image/upload/v1781609580/Full_Logo_neu1ij.png",
-    accentColor: "#4f46e5",           // indigo-600
-    accentColorLight: "#6366f1",      // indigo-500
-    accentGradientFrom: "#4f46e5",    // indigo-600
-    accentGradientTo: "#3730a3",      // indigo-800
+    accentColor: "#4f46e5",
+    accentColorLight: "#6366f1",
+    accentGradientFrom: "#4f46e5",
+    accentGradientTo: "#3730a3",
     sidebarBg: "#ffffff",
     sidebarBorder: "#e4e4e7",
   },
@@ -76,16 +75,15 @@ const clientConfig: ClientConfig = {
     knowledgeBases: true,
     analytics: true,
     outboundCalling: true,
-    clientPortal: true,
   },
   credits: {
-    total: 1000000,
-    used: 2450,
+    total: 100000,
+    used: 0,
     label: "CREDITS",
   },
   user: {
-    name: "DTC Founder",
-    email: "founder@brand.com",
+    name: "Admin",
+    email: "",
     role: "Administrator",
   },
 };
