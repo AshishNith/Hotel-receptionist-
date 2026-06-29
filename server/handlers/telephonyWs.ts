@@ -69,7 +69,7 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
           let greetingText = "";
           if (order) {
             if (direction === "outbound") {
-              greetingText = `Call connected. Greet the customer in friendly, modern Hinglish (Hindi mixed with simple English words). Say: "Hi, main Neha baat kar rahi hoon. Kya meri baat ho rahi hai?" or similar friendly modern greeting. Speak in a simple, natural, conversational style and DO NOT use the word "Customer" or ask "Am I speaking with customer?".`;
+              greetingText = `Call connected. Greet the customer in friendly, modern Hinglish (Hindi mixed with simple English words). Say: "Hi, main Neha baat kar rahi hoon. Kya meri baat Shruti se ho rahi hai?" or similar friendly modern greeting. Speak in a simple, natural, conversational style and DO NOT use the word "Customer" or ask "Am I speaking with customer?".`;
             } else {
               greetingText = `Call connected. Greet the customer professionally using your initial greeting. You are calling ${order.customerName} to confirm their order. Start by confirming you are speaking with the right person.`;
             }
@@ -131,10 +131,10 @@ export async function handleTelephonyWebSocket(telephonyWs: WebSocket, request: 
         logToFile(`[${providerName} WS] Running in DEMO MODE. Injected demo order context.`);
         order = {
           orderId: "DEMO-1001",
-          customerName: "Customer",
+          customerName: "Shruti",
           orderValue: 1499,
           paymentMethod: "COD",
-          shippingAddress: "Demo Address - Please update via dashboard",
+          shippingAddress: "Flat 402, Building B, Sector 62, Noida, Uttar Pradesh - 201301",
           phone: callerNumber || "+91 00000-DEMO",
           email: "demo@example.com"
         };
@@ -149,7 +149,7 @@ You are Neha, a friendly outbound customer care assistant. Your goal is to call 
 Language & Tone Rules:
 1. Speak exclusively in friendly, simple, modern Hinglish (conversational Hindi mixed with simple English words).
 2. DO NOT say "Am I speaking to Customer?" or "Are you Customer?". Never use the word "Customer" to refer to the person.
-3. Instead of formal/stiff greeting, greet them warmly: "Hi, main Neha baat kar rahi hoon. Kya meri baat ho rahi hai?" or confirm their name naturally if known.
+3. Instead of formal/stiff greeting, greet them warmly: "Hi, main Neha baat kar rahi hoon. Kya meri baat Shruti se ho rahi hai?" or confirm their name naturally if known.
 4. Use simple, conversational Hindi. Avoid complex, bookish Hindi words like "सत्यापन" (satyaapan), "पुष्टि" (pushti), "सहमति" (sahmati), "मूल्य" (moolya), "पत्ता" (patta). Instead, use common English terms: "confirm karna", "verify karna", "address verify karna", "order", "delivery address", "payment mode", "discount".
 5. Keep the tone friendly, polite, energetic, and helpful (like a modern Indian customer service girl).
 
